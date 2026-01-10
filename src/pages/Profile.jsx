@@ -1,14 +1,18 @@
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { updateProfile, changePassword } from '../store/slices/authSlice';
+import { fetchCompanies } from '../store/slices/companySlice';
 import toast from 'react-hot-toast';
 import { 
   UserCircleIcon,
   EnvelopeIcon,
   BuildingOfficeIcon,
   ShieldCheckIcon,
-  PencilIcon
+  PencilIcon,
+  EyeIcon,
+  EyeSlashIcon
 } from '@heroicons/react/24/outline';
+import { useEffect } from 'react';
 
 const Profile = () => {
   const dispatch = useDispatch();
@@ -17,6 +21,11 @@ const Profile = () => {
   
   const [editMode, setEditMode] = useState(false);
   const [showPasswordForm, setShowPasswordForm] = useState(false);
+  const [showPasswords, setShowPasswords] = useState({
+    current: false,
+    new: false,
+    confirm: false
+  });
   const [profileData, setProfileData] = useState({
     name: user?.name || '',
     email: user?.email || ''
@@ -27,6 +36,17 @@ const Profile = () => {
     confirmPassword: ''
   });
   const [errors, setErrors] = useState({});
+
+  useEffect(() => {
+    dispatch(fetchCompanies())
+  }, [dispatch]);
+
+  const togglePasswordVisibility = (field) => {
+    setShowPasswords(prev => ({
+      ...prev,
+      [field]: !prev[field]
+    }));
+  };
 
   const handleProfileUpdate = async (e) => {
     e.preventDefault();
@@ -181,17 +201,30 @@ const Profile = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Current Password
               </label>
-              <input
-                type="password"
-                value={passwordData.currentPassword}
-                onChange={(e) => {
-                  setPasswordData({...passwordData, currentPassword: e.target.value});
-                  if (errors.currentPassword) setErrors({...errors, currentPassword: ''});
-                }}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                  errors.currentPassword ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
+              <div className="relative">
+                <input
+                  type={showPasswords.current ? "text" : "password"}
+                  value={passwordData.currentPassword}
+                  onChange={(e) => {
+                    setPasswordData({...passwordData, currentPassword: e.target.value});
+                    if (errors.currentPassword) setErrors({...errors, currentPassword: ''});
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                    errors.currentPassword ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => togglePasswordVisibility('current')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPasswords.current ? (
+                    <EyeSlashIcon className="h-5 w-5" />
+                  ) : (
+                    <EyeIcon className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
               {errors.currentPassword && (
                 <p className="mt-1 text-sm text-red-600">{errors.currentPassword}</p>
               )}
@@ -201,48 +234,94 @@ const Profile = () => {
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 New Password
               </label>
-              <input
-                type="password"
-                value={passwordData.newPassword}
-                onChange={(e) => {
-                  setPasswordData({...passwordData, newPassword: e.target.value});
-                  if (errors.newPassword) setErrors({...errors, newPassword: ''});
-                }}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                  errors.newPassword ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
+              <div className="relative">
+                <input
+                  type={showPasswords.new ? "text" : "password"}
+                  value={passwordData.newPassword}
+                  onChange={(e) => {
+                    setPasswordData({...passwordData, newPassword: e.target.value});
+                    if (errors.newPassword) setErrors({...errors, newPassword: ''});
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                    errors.newPassword ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => togglePasswordVisibility('new')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPasswords.new ? (
+                    <EyeSlashIcon className="h-5 w-5" />
+                  ) : (
+                    <EyeIcon className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
               {errors.newPassword && (
                 <p className="mt-1 text-sm text-red-600">{errors.newPassword}</p>
               )}
+              <p className="mt-1 text-xs text-gray-500">
+                Password must be at least 6 characters long
+              </p>
             </div>
 
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
                 Confirm New Password
               </label>
-              <input
-                type="password"
-                value={passwordData.confirmPassword}
-                onChange={(e) => {
-                  setPasswordData({...passwordData, confirmPassword: e.target.value});
-                  if (errors.confirmPassword) setErrors({...errors, confirmPassword: ''});
-                }}
-                className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                  errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
-                }`}
-              />
+              <div className="relative">
+                <input
+                  type={showPasswords.confirm ? "text" : "password"}
+                  value={passwordData.confirmPassword}
+                  onChange={(e) => {
+                    setPasswordData({...passwordData, confirmPassword: e.target.value});
+                    if (errors.confirmPassword) setErrors({...errors, confirmPassword: ''});
+                  }}
+                  className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                    errors.confirmPassword ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                />
+                <button
+                  type="button"
+                  onClick={() => togglePasswordVisibility('confirm')}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                >
+                  {showPasswords.confirm ? (
+                    <EyeSlashIcon className="h-5 w-5" />
+                  ) : (
+                    <EyeIcon className="h-5 w-5" />
+                  )}
+                </button>
+              </div>
               {errors.confirmPassword && (
                 <p className="mt-1 text-sm text-red-600">{errors.confirmPassword}</p>
               )}
             </div>
 
-            <button
-              type="submit"
-              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-            >
-              Update Password
-            </button>
+            <div className="flex space-x-3">
+              <button
+                type="submit"
+                className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              >
+                Update Password
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setShowPasswordForm(false);
+                  setPasswordData({
+                    currentPassword: '',
+                    newPassword: '',
+                    confirmPassword: ''
+                  });
+                  setErrors({});
+                }}
+                className="px-4 py-2 bg-gray-200 text-gray-700 rounded-md hover:bg-gray-300"
+              >
+                Cancel
+              </button>
+            </div>
           </form>
         )}
       </div>
