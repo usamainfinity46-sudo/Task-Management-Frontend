@@ -30,13 +30,13 @@ const SubTaskList = ({
     const sortSubtasksByDate = (subTasks) => {
         // console.log("subtask ", subTasks);
         // console.log("subtask ", subTasks);
-        
+
         if (!subTasks || !Array.isArray(subTasks)) return [];
         return [...subTasks].sort((a, b) => new Date(a.date) - new Date(b.date));
     };
 
-   const sortedSubTasks = sortSubtasksByDate(subTasks);
-const filteredSubTasks = sortedSubTasks.filter(subTask => subTask.status !== 'completed');
+    const sortedSubTasks = sortSubtasksByDate(subTasks);
+    const filteredSubTasks = sortedSubTasks.filter(subTask => subTask.status !== 'completed');
 
     const toggleTaskExpansion = (taskId) => {
         setExpandedTasks(prev => ({
@@ -72,15 +72,15 @@ const filteredSubTasks = sortedSubTasks.filter(subTask => subTask.status !== 'co
         );
     };
 
-const handleStatusChange = (subTaskId, newStatus) => {
-    if (onUpdateSubTask) {
-        // Call the update function but don't wait for it
-        onUpdateSubTask(taskId, subTaskId, { status: newStatus });
-        
-        // Immediately reload the page
-        window.location.reload();
-    }
-};
+    const handleStatusChange = (subTaskId, newStatus) => {
+        if (onUpdateSubTask) {
+            // Call the update function but don't wait for it
+            onUpdateSubTask(taskId, subTaskId, { status: newStatus });
+
+            // Immediately reload the page
+            window.location.reload();
+        }
+    };
 
     const handleEditClick = (subTask) => {
         setEditingSubTask(subTask);
@@ -98,16 +98,17 @@ const handleStatusChange = (subTaskId, newStatus) => {
             await onUpdateSubTask(taskId, editingSubTask._id, subTaskData);
             setShowEditModal(false);
             setEditingSubTask(null);
+            window.location.reload();
         }
     };
 
-  const handleAddNewSubTask = async (subTaskData) => {
-    if (onAddSubTask) {
-        await onAddSubTask(taskId, subTaskData);
-        setShowAddModal(false);
-        window.location.reload(); // This will refresh the entire page
-    }
-};
+    const handleAddNewSubTask = async (subTaskData) => {
+        if (onAddSubTask) {
+            await onAddSubTask(taskId, subTaskData);
+            setShowAddModal(false);
+            window.location.reload(); // This will refresh the entire page
+        }
+    };
 
     return (
         <>

@@ -5,8 +5,11 @@ import {
   ClockIcon,
   UserGroupIcon,
   ArrowTrendingUpIcon,
-  BuildingOfficeIcon
+  BuildingOfficeIcon,
+  
 } from '@heroicons/react/24/outline';
+import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
+
 import { getDashboardCards } from '../../services/dashboard';
 
 const StatCard = ({ title, value, icon: Icon, color }) => {
@@ -16,7 +19,8 @@ const StatCard = ({ title, value, icon: Icon, color }) => {
     yellow: 'bg-yellow-500',
     orange: 'bg-orange-500',
     purple: 'bg-purple-500',
-    indigo: 'bg-indigo-500'
+    indigo: 'bg-indigo-500',
+    red: "bg-red-500"
   };
 
   return (
@@ -48,6 +52,7 @@ const StatsCards = () => {
   }, []);
 
   if (!cards) return null;
+console.log("cards ", cards);
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
@@ -74,6 +79,12 @@ const StatsCards = () => {
         value={cards.pendingTasks}
         icon={ClockIcon}
         color="yellow"
+      />
+      <StatCard
+        title="Delay Tasks"
+        value={cards.delayedTasks}
+        icon={ExclamationTriangleIcon }
+        color="red"
       />
       <StatCard
         title="Team Members"
