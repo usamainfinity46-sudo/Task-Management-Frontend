@@ -41,7 +41,7 @@ const StatsCards = () => {
     const loadCards = async () => {
       const res = await getDashboardCards();
       setCards(res.data.data);
-      console.log("cards ", cards);
+      // console.log("cards ", cards);
       
     };
     loadCards();

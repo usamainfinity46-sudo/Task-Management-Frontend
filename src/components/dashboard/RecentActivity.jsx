@@ -8,6 +8,8 @@ import {
   ExclamationTriangleIcon,
   ClockIcon
 } from '@heroicons/react/24/outline';
+import { Link } from "react-router-dom";
+
 
 const ActivityItem = ({ activity }) => {
   const getIcon = (type) => {
@@ -95,9 +97,11 @@ const RecentActivity = ({ activities }) => {
           <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
           <p className="text-sm text-gray-600">Latest updates from your team</p>
         </div>
+        <Link to='/tasks'>
         <button className="text-sm text-blue-600 hover:text-blue-700">
           View All
         </button>
+        </Link>
       </div>
       
       <div className="space-y-1">
