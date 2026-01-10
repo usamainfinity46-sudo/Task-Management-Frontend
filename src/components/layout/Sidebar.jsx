@@ -1,5 +1,5 @@
 import React from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink, useNavigate, Link } from 'react-router-dom';
 import { useDispatch, useSelector } from 'react-redux';
 import { logout } from '../../store/slices/authSlice';
 import { 
@@ -130,6 +130,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
           </nav>
           <div className="flex flex-shrink-0 border-t border-gray-200 p-4">
             <div className="flex items-center">
+             <Link to='/profile' className="flex items-center"> 
               <div>
                 <UserCircleIcon className="h-9 w-9 text-gray-400" />
               </div>
@@ -137,6 +138,8 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
                 <p className="text-sm font-medium text-gray-700">{user?.name}</p>
                 <p className="text-xs font-medium text-gray-500 capitalize">{user?.role}</p>
               </div>
+              </Link>
+
               <button
                 onClick={handleLogout}
                 className="ml-auto flex-shrink-0 p-1 text-gray-400 hover:text-gray-500"
