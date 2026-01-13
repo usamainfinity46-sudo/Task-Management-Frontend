@@ -1,5 +1,5 @@
 // components/tasks/SubTaskList.jsx
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { format } from 'date-fns';
 import {
     ChevronDownIcon,
@@ -15,7 +15,7 @@ import Modal from '../common/Modal';
 import { TASK_STATUS } from '../../utils/constants';
 
 const SubTaskList = ({
-    days = [], // Changed from subTasks to days
+    days = [],
     taskId,
     onUpdateSubTask,
     onDeleteSubTask,
@@ -26,18 +26,43 @@ const SubTaskList = ({
     const [editingSubTask, setEditingSubTask] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
+    const [userRole, setUserRole] = useState('');
+    const [isManager, setIsManager] = useState(false);
+    const [loadingRole, setLoadingRole] = useState(true);
+
+    // Get user role from localStorage
+    useEffect(() => {
+        const getUserRole = () => {
+            try {
+                const userDataStr = localStorage.getItem('user');
+                if (!userDataStr) return '';
+                
+                const userData = JSON.parse(userDataStr);
+                const role = userData?.role || '';
+                return typeof role === 'string' ? role.trim().toLowerCase() : '';
+            } catch (error) {
+                console.error('Error getting user role:', error);
+                return '';
+            }
+        };
+
+        const role = getUserRole();
+        setUserRole(role);
+        setIsManager(role === 'manager');
+        setLoadingRole(false);
+    }, []);
 
     // Sort days by date
-    const sortedDays = [...days].sort((a, b) => 
+    const sortedDays = [...days].sort((a, b) =>
         new Date(a.date) - new Date(b.date)
     );
 
     // Calculate total subtasks across all days
-    const totalSubTasks = days.reduce((sum, day) => 
+    const totalSubTasks = days.reduce((sum, day) =>
         sum + (day.subTasks?.length || 0), 0
     );
 
-    const completedSubTasks = days.reduce((sum, day) => 
+    const completedSubTasks = days.reduce((sum, day) =>
         sum + (day.subTasks?.filter(st => st.status === 'completed').length || 0), 0
     );
 
@@ -68,14 +93,13 @@ const SubTaskList = ({
             completed: 'bg-green-100 text-green-800',
             delayed: 'bg-red-100 text-red-800'
         };
-        
-        // Capitalize first letter of each word
+
         const formatStatus = (str) => {
-            return str.split('-').map(word => 
+            return str.split('-').map(word =>
                 word.charAt(0).toUpperCase() + word.slice(1)
             ).join(' ');
         };
-        
+
         return (
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[status] || colors.pending}`}>
                 {formatStatus(status)}
@@ -84,10 +108,10 @@ const SubTaskList = ({
     };
 
     const handleStatusChange = async (subTaskId, newStatus) => {
-        if (onUpdateSubTask) {
+        if (onUpdateSubTask && !isManager) {
             try {
                 await onUpdateSubTask(taskId, subTaskId, { status: newStatus });
-                window.location.reload();
+                window.location.reload(); // Reload after update
             } catch (error) {
                 console.error('Failed to update subtask status:', error);
                 alert('Failed to update subtask status. Please try again.');
@@ -96,43 +120,71 @@ const SubTaskList = ({
     };
 
     const handleEditClick = (subTask) => {
-        setEditingSubTask(subTask);
-        setShowEditModal(true);
+        if (!isManager) {
+            setEditingSubTask(subTask);
+            setShowEditModal(true);
+        }
     };
 
-    const handleDeleteClick = (subTaskId) => {
-        if (window.confirm('Are you sure you want to delete this subtask?')) {
-            onDeleteSubTask(taskId, subTaskId);
+    const handleDeleteClick = async (subTaskId) => {
+        if (!isManager && window.confirm('Are you sure you want to delete this subtask?')) {
+            try {
+                await onDeleteSubTask(taskId, subTaskId);
+                window.location.reload(); // Reload after delete
+            } catch (error) {
+                console.error('Failed to delete subtask:', error);
+                alert('Failed to delete subtask. Please try again.');
+            }
         }
     };
 
     const handleUpdateSubTask = async (subTaskData) => {
-        if (onUpdateSubTask && editingSubTask) {
-            await onUpdateSubTask(taskId, editingSubTask._id, subTaskData);
-            setShowEditModal(false);
-            setEditingSubTask(null);
-            window.location.reload();
+        if (onUpdateSubTask && editingSubTask && !isManager) {
+            try {
+                const payload = {
+                    status: subTaskData.status,
+                    hoursSpent: subTaskData.hoursSpent || 0,
+                    remarks: subTaskData.remarks || '',
+                    description: subTaskData.description
+                };
+                
+                await onUpdateSubTask(taskId, editingSubTask._id, payload);
+                setShowEditModal(false);
+                setEditingSubTask(null);
+                window.location.reload(); // Reload after update
+            } catch (error) {
+                console.error('Failed to update subtask:', error);
+                alert('Failed to update subtask. Please try again.');
+            }
         }
     };
 
     const handleAddNewSubTask = async (subTaskData) => {
-        if (onAddSubTask) {
-            // Make sure all required fields are present
-            const payload = {
-                date: subTaskData.date,
-                description: subTaskData.description,
-                status: subTaskData.status || 'in-progress',
-                hoursSpent: subTaskData.hoursSpent || 0,
-                remarks: subTaskData.remarks || ''
-            };
-            
-            console.log('Sending subtask payload:', payload);
-            
-            await onAddSubTask(taskId, payload);
-            setShowAddModal(false);
-            window.location.reload();
+        if (onAddSubTask && !isManager) {
+            try {
+                const payload = {
+                    date: subTaskData.date,
+                    description: subTaskData.description,
+                    status: subTaskData.status || 'in-progress',
+                    hoursSpent: subTaskData.hoursSpent || 0,
+                    remarks: subTaskData.remarks || ''
+                };
+                
+                await onAddSubTask(taskId, payload);
+                setShowAddModal(false);
+                window.location.reload(); // Reload after add
+            } catch (error) {
+                console.error('Failed to add subtask:', error);
+                alert('Failed to add subtask. Please try again.');
+            }
         }
     };
+
+    const canPerformActions = (userRole === 'staff' || userRole === 'admin') && !isManager;
+
+    if (loadingRole) {
+        return <div className="text-center py-4">Loading...</div>;
+    }
 
     return (
         <>
@@ -147,7 +199,7 @@ const SubTaskList = ({
                             {completedSubTasks} completed
                         </span>
                     </div>
-                    {canEdit && (
+                    {canPerformActions && (
                         <button
                             className="inline-flex items-center px-3 py-1 text-sm font-medium text-green-600 hover:text-green-800 hover:bg-green-50 rounded"
                             onClick={() => setShowAddModal(true)}
@@ -160,7 +212,7 @@ const SubTaskList = ({
 
                 {/* Days List - Tree Structure */}
                 <div className="divide-y">
-                    {sortedDays.map((day, dayIndex) => {
+                    {sortedDays.map((day) => {
                         const dayKey = day.date;
                         const isExpanded = expandedDays[dayKey];
                         const daySubTasks = day.subTasks || [];
@@ -197,8 +249,8 @@ const SubTaskList = ({
                                 {isExpanded && (
                                     <div className="pl-8 pr-4 pb-3 space-y-2">
                                         {daySubTasks.map((subTask) => (
-                                            <div 
-                                                key={subTask._id} 
+                                            <div
+                                                key={subTask._id}
                                                 className="border rounded-lg p-3 hover:bg-gray-50"
                                             >
                                                 <div className="flex items-start justify-between">
@@ -210,19 +262,22 @@ const SubTaskList = ({
                                                                         subTask._id,
                                                                         subTask.status === 'completed' ? 'pending' : 'completed'
                                                                     )}
+                                                                    disabled={isManager}
+                                                                    className={isManager ? 'cursor-not-allowed opacity-50' : ''}
                                                                 >
                                                                     {getStatusIcon(subTask.status)}
                                                                 </button>
-                                                                <span className="text-sm font-medium text-gray-900">
-                                                                    {subTask.description}
-                                                                </span>
+                                                                <div>
+                                                                    <span className="text-sm font-medium text-gray-900">
+                                                                        {subTask.description}
+                                                                    </span>
+                                                                </div>
                                                                 {getStatusBadge(subTask.status)}
                                                             </div>
-                                                            {/* Hours and Created Time */}
                                                             <div className="flex items-center space-x-3 text-xs text-gray-500">
                                                                 {subTask.hoursSpent > 0 && (
                                                                     <span className="font-medium">
-                                                                        {subTask.hoursSpent}h
+                                                                        Hours Spent: {subTask?.hoursSpent}
                                                                     </span>
                                                                 )}
                                                                 {subTask.createdAt && (
@@ -248,7 +303,7 @@ const SubTaskList = ({
                                                     </div>
 
                                                     {/* Action Buttons */}
-                                                    {canEdit && (
+                                                    {canPerformActions && (
                                                         <div className="flex items-center space-x-2 ml-4">
                                                            
                                                             <button
@@ -282,9 +337,9 @@ const SubTaskList = ({
                         );
                     })}
 
-                    {days.length === 0 && (
+                    {sortedDays.length === 0 && (
                         <div className="p-8 text-center text-gray-500">
-                            No subtasks yet. Click "Add Subtask" to create one.
+                            No subtasks yet. {canPerformActions && 'Click "Add Subtask" to create one.'}
                         </div>
                     )}
                 </div>
@@ -299,7 +354,7 @@ const SubTaskList = ({
                 }}
                 title="Edit Daily Task"
             >
-                {editingSubTask && (
+                {editingSubTask && canPerformActions && (
                     <SubTaskForm
                         onSubmit={handleUpdateSubTask}
                         onCancel={() => {
@@ -324,11 +379,13 @@ const SubTaskList = ({
                 onClose={() => setShowAddModal(false)}
                 title="Add Daily Task"
             >
-                <SubTaskForm
-                    onSubmit={handleAddNewSubTask}
-                    onCancel={() => setShowAddModal(false)}
-                    task={{ startDate: new Date(), endDate: new Date() }}
-                />
+                {canPerformActions && (
+                    <SubTaskForm
+                        onSubmit={handleAddNewSubTask}
+                        onCancel={() => setShowAddModal(false)}
+                        task={{ startDate: new Date(), endDate: new Date() }}
+                    />
+                )}
             </Modal>
         </>
     );

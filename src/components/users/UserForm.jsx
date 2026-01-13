@@ -23,7 +23,7 @@ const UserForm = ({ user, onSubmit, onCancel, companies, currentUser }) => {
     if (!formData.email.trim()) newErrors.email = 'Email is required';
     
     // Password validation based on role
-    if (formData.role !== 'staff') {
+   
       if (!user && !formData.password) {
         newErrors.password = 'Password is required';
       }
@@ -33,7 +33,7 @@ const UserForm = ({ user, onSubmit, onCancel, companies, currentUser }) => {
       if (!user && formData.password !== formData.confirmPassword) {
         newErrors.confirmPassword = 'Passwords do not match';
       }
-    }
+    
     
     if (currentUser.role === 'admin' && !formData.company) {
       newErrors.company = 'Company is required';
@@ -45,6 +45,7 @@ const UserForm = ({ user, onSubmit, onCancel, companies, currentUser }) => {
 
 const handleSubmit = async (e) => {
   e.preventDefault();
+
 
   if (!validate()) {
     console.log("Validation failed", errors);
@@ -209,7 +210,6 @@ const handleSubmit = async (e) => {
       </div>
 
       {/* Password Fields - Only for non-staff roles */}
-      {formData.role !== 'staff' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -249,7 +249,6 @@ const handleSubmit = async (e) => {
             )}
           </div>
         </div>
-      )}
 
       {/* Active Status */}
       <div className="flex items-center pt-2">

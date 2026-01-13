@@ -124,7 +124,7 @@ const handleAddSubTask = async (taskId, subTaskData) => {
     })).unwrap();
     
     // Refresh tasks
-    dispatch(getTasks());
+    // dispatch(getTasks());
   } catch (error) {
     console.error('Failed to add subtask:', error);
   }
