@@ -63,29 +63,30 @@ const TaskList = ({
     return false;
   };
 
-
   const canDeleteTask = (task) => {
     if (userRole === 'admin') return true;
     if (userRole === 'manager') return true;
     return false;
   };
 
- const handleStatusChange = (taskId, newStatus) => {
+  const handleStatusChange = (taskId, newStatus) => {
     if (onUpdateStatus) {
-        onUpdateStatus(taskId, newStatus);
-        // Immediately reload the page
-        window.location.reload();
+      onUpdateStatus(taskId, newStatus);
+      window.location.reload();
     }
-};
+  };
 
   return (
     <div className="space-y-4">
       {tasks.map((task) => {
-        const hasSubtasks = task.subTasks && task.subTasks.length > 0;
-        const completedSubtasks = hasSubtasks 
-          ? task.subTasks.filter(st => st.status === 'completed').length 
-          : 0;
-        const totalSubtasks = hasSubtasks ? task.subTasks.length : 0;
+        // Calculate subtask statistics from days array
+        const totalSubtasks = task.days?.reduce((sum, day) => 
+          sum + (day.subTasks?.length || 0), 0
+        ) || 0;
+        
+        const completedSubtasks = task.days?.reduce((sum, day) => 
+          sum + (day.subTasks?.filter(st => st.status === 'completed').length || 0), 0
+        ) || 0;
         
         return (
           <div key={task._id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
@@ -99,7 +100,6 @@ const TaskList = ({
                     {getStatusBadge(task.status)}
                   </div>
                   <p className="text-gray-600 text-sm mb-3">{task.description}</p>
-
                   <div className="flex items-center space-x-4 text-sm text-gray-500">
                     <div>
                       <span className="font-medium">Assigned to:</span> {task.assignedTo?.name || 'Unassigned'}
@@ -114,7 +114,6 @@ const TaskList = ({
                     )}
                   </div>
                 </div>
-
                 {/* Actions */}
                 <div className="ml-4 flex flex-col items-end space-y-2">
                   <div className="flex space-x-2">
@@ -140,8 +139,7 @@ const TaskList = ({
                       </button>
                     )}
                   </div>
-
-                  {/* Status Dropdown */}
+                  {/* Status Dropdown
                   {canEditTask(task) && (
                     <select
                       value={task.status}
@@ -152,17 +150,14 @@ const TaskList = ({
                         <option key={key} value={value}>{value}</option>
                       ))}
                     </select>
-                  )}
+                  )} */}
                 </div>
               </div>
-
-             
             </div>
-
-            {/* Subtasks Section */}
+            {/* Subtasks Section - Pass days array instead of subTasks */}
             <div className="border-t">
               <SubTaskList
-                subTasks={task.subTasks || []}
+                days={task.days || []}
                 taskId={task._id}
                 onUpdateSubTask={onUpdateSubTask}
                 onDeleteSubTask={onDeleteSubTask}
@@ -173,7 +168,6 @@ const TaskList = ({
           </div>
         );
       })}
-
       {tasks.length === 0 && (
         <div className="text-center py-12 text-gray-500">
           No tasks found. Create your first task to get started.

@@ -10,7 +10,7 @@ import Button from '../common/Button';
 const TaskForm = ({ onSubmit, onCancel, userRole, companyId, initialData }) => {
   const { users } = useSelector((state) => state.users);
    const { companies } = useSelector((state) => state.companies);
-  console.log("user ", users);
+  // console.log("user ", users);
   const dispatch = useDispatch();
   
   const [formData, setFormData] = useState({
@@ -45,7 +45,7 @@ const TaskForm = ({ onSubmit, onCancel, userRole, companyId, initialData }) => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  console.log("companies  ", companies);
+  // console.log("companies  ", companies);
   
 
   const validate = () => {

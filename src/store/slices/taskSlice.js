@@ -49,18 +49,20 @@ export const createTask = createAsyncThunk(
   }
 );
 
-// Add subtask to task
+// Add subtask to task - FIXED
 export const addSubTask = createAsyncThunk(
   'tasks/addSubTask',
   async ({ taskId, subTaskData }, { rejectWithValue }) => {
     try {
-      const response = await taskService.addSubTask(taskId, subTaskData);
-      return response.data;
-    } catch (error) {
-      return rejectWithValue(error.response?.data?.message || 'Failed to add subtask');
+      // subTaskData should contain: date, description, status, hoursSpent, remarks
+      const res = await taskService.addSubTask(taskId, subTaskData);
+      return res.data;
+    } catch (e) {
+      return rejectWithValue(e.response?.data?.message || 'Failed to add subtask');
     }
   }
 );
+
 
 // Update Subtask
 export const updateSubTask = createAsyncThunk(

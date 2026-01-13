@@ -12,36 +12,39 @@ import {
 } from '@heroicons/react/24/outline';
 import SubTaskForm from './SubTaskForm';
 import Modal from '../common/Modal';
-import { TASK_STATUS } from '../../utils/constants'; // Add this import
+import { TASK_STATUS } from '../../utils/constants';
 
 const SubTaskList = ({
-    subTasks,
+    days = [], // Changed from subTasks to days
     taskId,
     onUpdateSubTask,
     onDeleteSubTask,
     canEdit,
     onAddSubTask
 }) => {
-    const [expandedTasks, setExpandedTasks] = useState({});
+    const [expandedDays, setExpandedDays] = useState({});
     const [editingSubTask, setEditingSubTask] = useState(null);
     const [showEditModal, setShowEditModal] = useState(false);
     const [showAddModal, setShowAddModal] = useState(false);
 
-    const sortSubtasksByDate = (subTasks) => {
-        // console.log("subtask ", subTasks);
-        // console.log("subtask ", subTasks);
+    // Sort days by date
+    const sortedDays = [...days].sort((a, b) => 
+        new Date(a.date) - new Date(b.date)
+    );
 
-        if (!subTasks || !Array.isArray(subTasks)) return [];
-        return [...subTasks].sort((a, b) => new Date(a.date) - new Date(b.date));
-    };
+    // Calculate total subtasks across all days
+    const totalSubTasks = days.reduce((sum, day) => 
+        sum + (day.subTasks?.length || 0), 0
+    );
 
-    const sortedSubTasks = sortSubtasksByDate(subTasks);
-    const filteredSubTasks = sortedSubTasks.filter(subTask => subTask.status !== 'completed');
+    const completedSubTasks = days.reduce((sum, day) => 
+        sum + (day.subTasks?.filter(st => st.status === 'completed').length || 0), 0
+    );
 
-    const toggleTaskExpansion = (taskId) => {
-        setExpandedTasks(prev => ({
+    const toggleDayExpansion = (dayDate) => {
+        setExpandedDays(prev => ({
             ...prev,
-            [taskId]: !prev[taskId]
+            [dayDate]: !prev[dayDate]
         }));
     };
 
@@ -65,27 +68,33 @@ const SubTaskList = ({
             completed: 'bg-green-100 text-green-800',
             delayed: 'bg-red-100 text-red-800'
         };
+        
+        // Capitalize first letter of each word
+        const formatStatus = (str) => {
+            return str.split('-').map(word => 
+                word.charAt(0).toUpperCase() + word.slice(1)
+            ).join(' ');
+        };
+        
         return (
             <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[status] || colors.pending}`}>
-                {status}
+                {formatStatus(status)}
             </span>
         );
     };
 
-   const handleStatusChange = async (subTaskId, newStatus) => {
-    if (onUpdateSubTask) {
-        try {
-            // Wait for the update to complete before reloading
-            await onUpdateSubTask(taskId, subTaskId, { status: newStatus });
-            // Only reload after successful update
-            window.location.reload();
-        } catch (error) {
-            console.error('Failed to update subtask status:', error);
-            // Optionally show an error message to the user
-            alert('Failed to update subtask status. Please try again.');
+    const handleStatusChange = async (subTaskId, newStatus) => {
+        if (onUpdateSubTask) {
+            try {
+                await onUpdateSubTask(taskId, subTaskId, { status: newStatus });
+                window.location.reload();
+            } catch (error) {
+                console.error('Failed to update subtask status:', error);
+                alert('Failed to update subtask status. Please try again.');
+            }
         }
-    }
-};
+    };
+
     const handleEditClick = (subTask) => {
         setEditingSubTask(subTask);
         setShowEditModal(true);
@@ -108,9 +117,20 @@ const SubTaskList = ({
 
     const handleAddNewSubTask = async (subTaskData) => {
         if (onAddSubTask) {
-            await onAddSubTask(taskId, subTaskData);
+            // Make sure all required fields are present
+            const payload = {
+                date: subTaskData.date,
+                description: subTaskData.description,
+                status: subTaskData.status || 'in-progress',
+                hoursSpent: subTaskData.hoursSpent || 0,
+                remarks: subTaskData.remarks || ''
+            };
+            
+            console.log('Sending subtask payload:', payload);
+            
+            await onAddSubTask(taskId, payload);
             setShowAddModal(false);
-            window.location.reload(); // This will refresh the entire page
+            window.location.reload();
         }
     };
 
@@ -118,132 +138,156 @@ const SubTaskList = ({
         <>
             <div className="mt-4 border rounded-lg">
                 {/* Header */}
-                <div
-                    className="flex items-center justify-between p-4 bg-gray-50 rounded-t-lg cursor-pointer hover:bg-gray-100"
-                    onClick={() => toggleTaskExpansion(taskId)}
-                >
+                <div className="flex items-center justify-between p-4 bg-gray-50 rounded-t-lg">
                     <div className="flex items-center space-x-3">
                         <span className="font-medium text-gray-900">
-                            Daily Subtasks ({filteredSubTasks.length})
+                            Daily Subtasks ({totalSubTasks})
                         </span>
                         <span className="text-xs text-gray-500">
-                            {sortedSubTasks.filter(st => st.status === 'completed').length} completed
+                            {completedSubTasks} completed
                         </span>
                     </div>
-                    <div className="flex items-center space-x-3">
-                        {canEdit && (
-                            <button
-                                className="inline-flex items-center p-1 text-green-600 hover:text-green-800"
-                                onClick={(e) => {
-                                    e.stopPropagation();
-                                    setShowAddModal(true);
-                                }}
-                                title="Add Subtask"
-                            >
-                                <span className="text-sm font-medium">+ Add</span>
-                            </button>
-                        )}
-                        {expandedTasks[taskId] ? (
-                            <ChevronUpIcon className="h-5 w-5 text-gray-500" />
-                        ) : (
-                            <ChevronDownIcon className="h-5 w-5 text-gray-500" />
-                        )}
-                    </div>
+                    {canEdit && (
+                        <button
+                            className="inline-flex items-center px-3 py-1 text-sm font-medium text-green-600 hover:text-green-800 hover:bg-green-50 rounded"
+                            onClick={() => setShowAddModal(true)}
+                            title="Add Subtask"
+                        >
+                            + Add Subtask
+                        </button>
+                    )}
                 </div>
 
-                {/* Expanded Content */}
-                {expandedTasks[taskId] && (
-                    <div className="p-4 space-y-4">
-                        {sortedSubTasks.map((subTask, index) => (
-                            <div key={subTask._id} className="border rounded-lg p-4 hover:bg-gray-50">
-                                <div className="flex items-start justify-between">
-                                    <div className="flex-1">
-                                        <div className="flex items-center justify-between mb-2">
-                                            <div className="flex items-center space-x-3">
-                                                <button
-                                                    onClick={() => handleStatusChange(
-                                                        subTask._id,
-                                                        subTask.status === 'completed' ? 'pending' : 'completed'
-                                                    )}
-                                                    className="flex items-center"
-                                                >
-                                                    {getStatusIcon(subTask.status)}
-                                                </button>
-                                                <div>
-                                                    <span className="text-sm font-medium text-gray-900">
-                                                        Day {index + 1} • {format(new Date(subTask.date), 'EEEE, MMMM dd, yyyy')}
-                                                    </span>
-                                                </div>
-                                            </div>
+                {/* Days List - Tree Structure */}
+                <div className="divide-y">
+                    {sortedDays.map((day, dayIndex) => {
+                        const dayKey = day.date;
+                        const isExpanded = expandedDays[dayKey];
+                        const daySubTasks = day.subTasks || [];
+                        const dayCompleted = daySubTasks.filter(st => st.status === 'completed').length;
 
-                                            <div className="flex items-center space-x-2">
-                                                {canEdit && (
-                                                    <select
-                                                        value={subTask.status}
-                                                        onChange={(e) => handleStatusChange(subTask._id, e.target.value)}
-                                                        className="text-xs px-2 py-1 border border-gray-300 rounded focus:outline-none focus:ring-1 focus:ring-blue-500"
-                                                    >
-                                                        {Object.entries(TASK_STATUS).map(([key, value]) => (
-                                                            <option key={key} value={value}>
-                                                                {value}
-                                                            </option>
-                                                        ))}
-                                                    </select>
-                                                )}
-                                                {getStatusBadge(subTask.status)}
-                                            </div>
-                                        </div>
-
-                                        <div className="mt-3 space-y-2">
-                                            {/* Hours Spent */}
-                                            {subTask.hoursSpent > 0 && (
-                                                <div className="flex items-center space-x-2 text-sm text-gray-600">
-                                                    <span className="font-medium">Hours spent:</span>
-                                                    <span>{subTask.hoursSpent} hours</span>
-                                                </div>
-                                            )}
-
-                                            {/* Remarks */}
-                                            {subTask.remarks && (
-                                                <div className="text-sm text-gray-600">
-                                                    <span className="font-medium">Remarks:</span>
-                                                    <span className="ml-2">{subTask.remarks}</span>
-                                                </div>
-                                            )}
-
-                                            {/* Completed At */}
-                                            {subTask.completedAt && (
-                                                <div className="text-xs text-gray-500">
-                                                    Completed: {format(new Date(subTask.completedAt), 'MMM dd, hh:mm a')}
-                                                </div>
-                                            )}
+                        return (
+                            <div key={dayKey} className="bg-white">
+                                {/* Day Header */}
+                                <div
+                                    className="flex items-center justify-between p-3 cursor-pointer hover:bg-gray-50"
+                                    onClick={() => toggleDayExpansion(dayKey)}
+                                >
+                                    <div className="flex items-center space-x-3">
+                                        {isExpanded ? (
+                                            <ChevronUpIcon className="h-5 w-5 text-gray-500" />
+                                        ) : (
+                                            <ChevronDownIcon className="h-5 w-5 text-gray-500" />
+                                        )}
+                                        <div>
+                                            <span className="font-medium text-gray-900">
+                                                {format(new Date(day.date), 'EEEE, MMMM dd, yyyy')}
+                                            </span>
+                                            <span className="ml-2 text-sm text-gray-500">
+                                                ({daySubTasks.length} task{daySubTasks.length !== 1 ? 's' : ''})
+                                            </span>
                                         </div>
                                     </div>
-
-                                    {/* Action Buttons */}
-                                    {canEdit && (
-                                        <div className="flex flex-col space-y-2 ml-4">
-                                            <button
-                                                onClick={() => handleEditClick(subTask)}
-                                                className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
-                                                title="Edit Subtask"
-                                            >
-                                                <PencilIcon className="h-4 w-4" />
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteClick(subTask._id)}
-                                                className="p-1 text-gray-400 hover:text-red-600 transition-colors"
-                                                title="Delete Subtask"
-                                            >
-                                                <TrashIcon className="h-4 w-4" />
-                                            </button>
-                                        </div>
-                                    )}
+                                    <div className="text-xs text-gray-500">
+                                        {dayCompleted}/{daySubTasks.length} completed
+                                    </div>
                                 </div>
+
+                                {/* SubTasks for this Day */}
+                                {isExpanded && (
+                                    <div className="pl-8 pr-4 pb-3 space-y-2">
+                                        {daySubTasks.map((subTask) => (
+                                            <div 
+                                                key={subTask._id} 
+                                                className="border rounded-lg p-3 hover:bg-gray-50"
+                                            >
+                                                <div className="flex items-start justify-between">
+                                                    <div className="flex-1">
+                                                        <div className="flex items-center justify-between mb-2">
+                                                            <div className="flex items-center space-x-3">
+                                                                <button
+                                                                    onClick={() => handleStatusChange(
+                                                                        subTask._id,
+                                                                        subTask.status === 'completed' ? 'pending' : 'completed'
+                                                                    )}
+                                                                >
+                                                                    {getStatusIcon(subTask.status)}
+                                                                </button>
+                                                                <span className="text-sm font-medium text-gray-900">
+                                                                    {subTask.description}
+                                                                </span>
+                                                                {getStatusBadge(subTask.status)}
+                                                            </div>
+                                                            {/* Hours and Created Time */}
+                                                            <div className="flex items-center space-x-3 text-xs text-gray-500">
+                                                                {subTask.hoursSpent > 0 && (
+                                                                    <span className="font-medium">
+                                                                        {subTask.hoursSpent}h
+                                                                    </span>
+                                                                )}
+                                                                {subTask.createdAt && (
+                                                                    <span>
+                                                                        {format(new Date(subTask.createdAt), 'hh:mm a')}
+                                                                    </span>
+                                                                )}
+                                                            </div>
+                                                        </div>
+
+                                                        <div className="ml-8 space-y-1">
+                                                            {subTask.remarks && (
+                                                                <div className="text-xs text-gray-600">
+                                                                    <span className="font-medium">Remarks:</span> {subTask.remarks}
+                                                                </div>
+                                                            )}
+                                                            {subTask.completedAt && (
+                                                                <div className="text-xs text-gray-500">
+                                                                    Completed: {format(new Date(subTask.completedAt), 'MMM dd, hh:mm a')}
+                                                                </div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+
+                                                    {/* Action Buttons */}
+                                                    {canEdit && (
+                                                        <div className="flex items-center space-x-2 ml-4">
+                                                           
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleEditClick(subTask);
+                                                                }}
+                                                                className="p-1 text-gray-400 hover:text-blue-600"
+                                                                title="Edit Subtask"
+                                                            >
+                                                                <PencilIcon className="h-4 w-4" />
+                                                            </button>
+                                                            <button
+                                                                onClick={(e) => {
+                                                                    e.stopPropagation();
+                                                                    handleDeleteClick(subTask._id);
+                                                                }}
+                                                                className="p-1 text-gray-400 hover:text-red-600"
+                                                                title="Delete Subtask"
+                                                            >
+                                                                <TrashIcon className="h-4 w-4" />
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                        ))}
-                    </div>
-                )}
+                        );
+                    })}
+
+                    {days.length === 0 && (
+                        <div className="p-8 text-center text-gray-500">
+                            No subtasks yet. Click "Add Subtask" to create one.
+                        </div>
+                    )}
+                </div>
             </div>
 
             {/* Edit Subtask Modal */}

@@ -21,8 +21,9 @@ export const taskService = {
   updateSubTask: (taskId, subTaskId, data) => 
     api.put(`/tasks/${taskId}/subtasks/${subTaskId}`, data),
   
-  // Add subtask
-  addSubTask: (taskId, data) => api.post(`/tasks/${taskId}/subtasks`, data),
+  // Add subtask as a Day
+addSubTask: (taskId, data) =>
+  api.post(`/tasks/${taskId}/subtaskDays`, data),
 
   
   // Delete subtask

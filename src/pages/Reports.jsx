@@ -2,6 +2,7 @@
 // components/reports/Reports.jsx
 import React, { useState, useEffect } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
+import { format } from 'date-fns';
 import {
   fetchReport,
   clearReport,
@@ -16,13 +17,15 @@ import {
   DocumentArrowDownIcon,
   ChartBarIcon,
   ClockIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  ChevronDownIcon,
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 import { PieChart, Pie, Cell, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 
 const Reports = () => {
   const dispatch = useDispatch();
-  const { report: reportData, isLoading } = useSelector((state) => state.tasks); // Renamed to reportData
+  const { report: reportData, isLoading } = useSelector((state) => state.tasks);
   const { users } = useSelector((state) => state.users);
   const { companies } = useSelector((state) => state.companies);
   const { user: currentUser } = useSelector((state) => state.auth);
@@ -34,6 +37,10 @@ const Reports = () => {
     year: new Date().getFullYear(),
     reportType: 'monthly'
   });
+
+  // State for tree expansion - MOVED TO TOP LEVEL
+  const [expandedTasks, setExpandedTasks] = useState({});
+  const [expandedDays, setExpandedDays] = useState({});
 
   // Fetch initial data
   useEffect(() => {
@@ -63,8 +70,20 @@ const Reports = () => {
 
   const handleExport = () => {
     dispatch(exportToExcel(filters));
+  };
 
+  const toggleTask = (taskId) => {
+    setExpandedTasks(prev => ({
+      ...prev,
+      [taskId]: !prev[taskId]
+    }));
+  };
 
+  const toggleDay = (dayKey) => {
+    setExpandedDays(prev => ({
+      ...prev,
+      [dayKey]: !prev[dayKey]
+    }));
   };
 
   const months = [
@@ -87,32 +106,22 @@ const Reports = () => {
     return { value: year, label: year.toString() };
   });
 
-  // If you want different filtering based on role:
   let filteredUsers = [];
-
   if (Array.isArray(users)) {
     if (currentUser?.role === 'admin') {
-      // Admin sees all users
       filteredUsers = users;
     } else if (currentUser?.role === 'manager') {
-      // Manager sees only staff users
       filteredUsers = users.filter(user => user.role === 'staff');
     } else if (currentUser?.role === 'staff') {
-      // Staff sees only themselves
       filteredUsers = users.filter(user => user._id === currentUser._id);
     }
   }
 
-
-
-  // Check if report data exists and has the expected structure
-  const report = reportData?.report; // Extract the inner report object
+  const report = reportData?.report;
   const summary = report?.summary || {};
   const detailed = report?.detailed || [];
   const userReports = report?.userReports || [];
   const chartData = report?.chartData || [];
-  // console.log("jjjj", reportData?.report?.chartData);
-
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
@@ -128,7 +137,6 @@ const Reports = () => {
         {/* Filters Card */}
         <div className="bg-white rounded-lg shadow p-6 mb-6">
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            {/* Company Filter - Only show for admin */}
             {currentUser.role === 'admin' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -151,7 +159,6 @@ const Reports = () => {
               </div>
             )}
 
-            {/* User Filter - Show all users */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <UserGroupIcon className="h-4 w-4 inline mr-1" />
@@ -172,7 +179,6 @@ const Reports = () => {
               </select>
             </div>
 
-            {/* Month Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <CalendarIcon className="h-4 w-4 inline mr-1" />
@@ -192,7 +198,6 @@ const Reports = () => {
               </select>
             </div>
 
-            {/* Year Filter */}
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">
                 <CalendarIcon className="h-4 w-4 inline mr-1" />
@@ -213,7 +218,6 @@ const Reports = () => {
             </div>
           </div>
 
-          {/* Report Type and Actions */}
           <div className="flex flex-wrap items-center justify-between gap-4">
             <div className="flex space-x-2">
               {['monthly', 'quarterly', 'yearly'].map((type) => (
@@ -315,8 +319,6 @@ const Reports = () => {
             {/* Charts */}
             {chartData.length > 0 && (
               <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-                {/* Pie Chart */}
-                {/* Pie Chart */}
                 <div className="bg-white rounded-lg shadow p-6">
                   <h3 className="text-lg font-semibold mb-4">Task Status Distribution</h3>
                   <div className="h-64">
@@ -348,7 +350,6 @@ const Reports = () => {
                   </div>
                 </div>
 
-                {/* Bar Chart for User Performance */}
                 {userReports.length > 0 && (
                   <div className="bg-white rounded-lg shadow p-6">
                     <h3 className="text-lg font-semibold mb-4">User Performance</h3>
@@ -370,7 +371,7 @@ const Reports = () => {
               </div>
             )}
 
-            {/* Detailed Report Table */}
+            {/* Detailed Report Table - Tree Structure */}
             {detailed.length > 0 && (
               <div className="bg-white rounded-lg shadow overflow-hidden">
                 <div className="px-6 py-4 border-b">
@@ -384,68 +385,201 @@ const Reports = () => {
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Task Title
+                          Task / Date / Subtask
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Assigned To
-                        </th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Company
+                          Assigned To / Time
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Status
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          Progress
+                          Priority
                         </th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                           Hours
                         </th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          Progress
+                        </th>
                       </tr>
                     </thead>
                     <tbody className="bg-white divide-y divide-gray-200">
-                      {detailed.map((task) => (
-                        <tr key={task.taskId} className="hover:bg-gray-50">
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="font-medium text-gray-900">{task.title}</div>
-                            <div className="text-sm text-gray-500">
-                              {new Date(task.startDate).toLocaleDateString()} - {new Date(task.endDate).toLocaleDateString()}
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="font-medium">{task.assignedTo}</div>
-                            <div className="text-sm text-gray-500">{task.assignedToEmail}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="text-sm text-gray-900">{task.company}</div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <span className={`px-2 py-1 rounded-full text-xs font-medium ${task.status === 'completed' ? 'bg-green-100 text-green-800' :
-                              task.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
-                                'bg-yellow-100 text-yellow-800'
-                              }`}>
-                              {task.status}
-                            </span>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap">
-                            <div className="flex items-center">
-                              <div className="w-full bg-gray-200 rounded-full h-2.5 mr-2">
-                                <div
-                                  className="bg-blue-600 h-2.5 rounded-full"
-                                  style={{ width: `${task.progress || 0}%` }}
-                                ></div>
-                              </div>
-                              <span className="text-sm font-medium">{task.progress || 0}%</span>
-                            </div>
-                            <div className="text-xs text-gray-500 mt-1">
-                              {task.completedSubtasks || 0}/{task.totalSubtasks || 0} subtasks
-                            </div>
-                          </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                            {task.totalHours || 0} hours
-                          </td>
-                        </tr>
-                      ))}
+                      {detailed.map((task) => {
+                        const isTaskExpanded = expandedTasks[task.taskId];
+                        
+                        return (
+                          <React.Fragment key={task.taskId}>
+                            {/* Task Row */}
+                            <tr 
+                              className="bg-gray-50 hover:bg-gray-100 cursor-pointer" 
+                              onClick={() => toggleTask(task.taskId)}
+                            >
+                              <td className="px-6 py-4">
+                                <div className="flex items-center">
+                                  {task.days && task.days.length > 0 ? (
+                                    isTaskExpanded ? (
+                                      <ChevronDownIcon className="h-5 w-5 text-gray-400 mr-2" />
+                                    ) : (
+                                      <ChevronRightIcon className="h-5 w-5 text-gray-400 mr-2" />
+                                    )
+                                  ) : (
+                                    <div className="w-5 mr-2" />
+                                  )}
+                                  <div>
+                                    <div className="font-bold text-gray-900">{task.title}</div>
+                                    {task.description && (
+                                      <div className="text-xs text-gray-500 mt-1">{task.description}</div>
+                                    )}
+                                    <div className="text-xs text-gray-500 mt-1">
+                                      {new Date(task.startDate).toLocaleDateString()} - {new Date(task.endDate).toLocaleDateString()}
+                                    </div>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="font-medium">
+                                  {typeof task.assignedTo === 'object' && task.assignedTo !== null 
+                                    ? task.assignedTo.name 
+                                    : task.assignedTo || 'N/A'}
+                                </div>
+                                <div className="text-sm text-gray-500">
+                                  {typeof task.assignedTo === 'object' && task.assignedTo !== null 
+                                    ? task.assignedTo.email 
+                                    : ''}
+                                </div>
+                                {typeof task.company === 'object' && task.company !== null && (
+                                  <div className="text-xs text-gray-500 mt-1">
+                                    {task.company.name}
+                                  </div>
+                                )}
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  task.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                  task.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
+                                  'bg-yellow-100 text-yellow-800'
+                                }`}>
+                                  {task.status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  task.priority === 'high' ? 'bg-red-100 text-red-800' :
+                                  task.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                  'bg-green-100 text-green-800'
+                                }`}>
+                                  {task.priority?.toUpperCase()}
+                                </span>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="text-sm text-gray-900 font-medium">
+                                  {task.totalHours || 0}h
+                                </div>
+                              </td>
+                              <td className="px-6 py-4 whitespace-nowrap">
+                                <div className="flex items-center">
+                                  <div className="w-24 bg-gray-200 rounded-full h-2">
+                                    <div
+                                      className="bg-blue-600 h-2 rounded-full"
+                                      style={{ width: `${task.progress || 0}%` }}
+                                    ></div>
+                                  </div>
+                                  <span className="ml-2 text-sm text-gray-900">{task.progress || 0}%</span>
+                                </div>
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {task.completedSubtasks || 0}/{task.totalSubtasks || 0} subtasks
+                                </div>
+                              </td>
+                            </tr>
+
+                            {/* Expanded Days */}
+                            {isTaskExpanded && task.days && task.days.map((day) => {
+                              const dayKey = `${task.taskId}-${day.date}`;
+                              const isDayExpanded = expandedDays[dayKey];
+                              
+                              return (
+                                <React.Fragment key={dayKey}>
+                                  {/* Day Row */}
+                                  <tr 
+                                    className="bg-blue-50 hover:bg-blue-100 cursor-pointer"
+                                    onClick={() => toggleDay(dayKey)}
+                                  >
+                                    <td className="px-6 py-3" colSpan="6">
+                                      <div className="flex items-center pl-8">
+                                        {isDayExpanded ? (
+                                          <ChevronDownIcon className="h-4 w-4 text-gray-400 mr-2" />
+                                        ) : (
+                                          <ChevronRightIcon className="h-4 w-4 text-gray-400 mr-2" />
+                                        )}
+                                        <CalendarIcon className="h-4 w-4 text-blue-600 mr-2" />
+                                        <span className="text-sm font-semibold text-gray-900">
+                                          {format(new Date(day.date), 'EEEE, MMMM dd, yyyy')}
+                                        </span>
+                                        <span className="ml-3 text-xs text-gray-500">
+                                          ({day.subTasks?.length || 0} subtask{day.subTasks?.length !== 1 ? 's' : ''})
+                                        </span>
+                                      </div>
+                                    </td>
+                                  </tr>
+
+                                  {/* Expanded Subtasks */}
+                                  {isDayExpanded && day.subTasks && day.subTasks.map((subTask, idx) => (
+                                    <tr key={`${dayKey}-${idx}`} className="hover:bg-gray-50">
+                                      <td className="px-6 py-3">
+                                        <div className="flex items-center pl-16">
+                                          <CheckCircleIcon className={`h-4 w-4 mr-2 ${
+                                            subTask.status === 'completed' ? 'text-green-500' : 'text-gray-300'
+                                          }`} />
+                                          <div>
+                                            <div className="text-sm text-gray-900">{subTask.description}</div>
+                                            {subTask.remarks && (
+                                              <div className="text-xs text-gray-500 mt-1">
+                                                <span className="font-medium">Remarks:</span> {subTask.remarks}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      </td>
+                                      <td className="px-6 py-3 whitespace-nowrap">
+                                        {subTask.createdAt && (
+                                          <div className="flex items-center text-xs text-gray-500">
+                                            <ClockIcon className="h-3 w-3 mr-1" />
+                                            {format(new Date(subTask.createdAt), 'hh:mm a')}
+                                          </div>
+                                        )}
+                                      </td>
+                                      <td className="px-6 py-3 whitespace-nowrap">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                          subTask.status === 'completed' ? 'bg-green-100 text-green-800' :
+                                          subTask.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
+                                          subTask.status === 'delayed' ? 'bg-red-100 text-red-800' :
+                                          'bg-yellow-100 text-yellow-800'
+                                        }`}>
+                                          {subTask.status.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+                                        </span>
+                                      </td>
+                                      <td className="px-6 py-3 whitespace-nowrap">
+                                        <span className="text-xs text-gray-500">-</span>
+                                      </td>
+                                      <td className="px-6 py-3 whitespace-nowrap">
+                                        <div className="text-sm text-gray-900">{subTask.hoursSpent || 0}h</div>
+                                      </td>
+                                      <td className="px-6 py-3 whitespace-nowrap">
+                                        {subTask.completedAt && (
+                                          <div className="text-xs text-gray-500">
+                                            Completed: {format(new Date(subTask.completedAt), 'MMM dd, hh:mm a')}
+                                          </div>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </React.Fragment>
+                              );
+                            })}
+                          </React.Fragment>
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>

@@ -115,16 +115,20 @@ const Tasks = () => {
   };
 
   // Handle Add Subtask (from SubTaskList component)
-  const handleAddSubTask = async (taskId, subTaskData) => {
-    try {
-      await dispatch(addSubTask({ taskId, subTaskData })).unwrap();
-      toast.success('Subtask added successfully!');
-      return true;
-    } catch (error) {
-      toast.error(error?.message || 'Failed to add subtask');
-      return false;
-    }
-  };
+const handleAddSubTask = async (taskId, subTaskData) => {
+  try {
+    // Dispatch the action with correct parameters
+    await dispatch(addSubTask({ 
+      taskId, 
+      subTaskData // This contains: date, description, status, hoursSpent, remarks
+    })).unwrap();
+    
+    // Refresh tasks
+    dispatch(getTasks());
+  } catch (error) {
+    console.error('Failed to add subtask:', error);
+  }
+};
 
   // Handle Update Status
   const handleUpdateStatus = async (taskId, status) => {
