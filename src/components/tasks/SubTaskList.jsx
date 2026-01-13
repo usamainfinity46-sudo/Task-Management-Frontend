@@ -36,7 +36,7 @@ const SubTaskList = ({
             try {
                 const userDataStr = localStorage.getItem('user');
                 if (!userDataStr) return '';
-                
+
                 const userData = JSON.parse(userDataStr);
                 const role = userData?.role || '';
                 return typeof role === 'string' ? role.trim().toLowerCase() : '';
@@ -147,7 +147,7 @@ const SubTaskList = ({
                     remarks: subTaskData.remarks || '',
                     description: subTaskData.description
                 };
-                
+
                 await onUpdateSubTask(taskId, editingSubTask._id, payload);
                 setShowEditModal(false);
                 setEditingSubTask(null);
@@ -169,7 +169,7 @@ const SubTaskList = ({
                     hoursSpent: subTaskData.hoursSpent || 0,
                     remarks: subTaskData.remarks || ''
                 };
-                
+
                 await onAddSubTask(taskId, payload);
                 setShowAddModal(false);
                 window.location.reload(); // Reload after add
@@ -205,7 +205,7 @@ const SubTaskList = ({
                             onClick={() => setShowAddModal(true)}
                             title="Add Subtask"
                         >
-                            + Add Subtask
+                            + Add Progress
                         </button>
                     )}
                 </div>
@@ -277,8 +277,9 @@ const SubTaskList = ({
                                                             <div className="flex items-center space-x-3 text-xs text-gray-500">
                                                                 {subTask.hoursSpent > 0 && (
                                                                     <span className="font-medium">
-                                                                        Hours Spent: {subTask?.hoursSpent}
+                                                                        Hours Spent: {subTask?.hoursSpent || 0}
                                                                     </span>
+
                                                                 )}
                                                                 {subTask.createdAt && (
                                                                     <span>
@@ -305,7 +306,7 @@ const SubTaskList = ({
                                                     {/* Action Buttons */}
                                                     {canPerformActions && (
                                                         <div className="flex items-center space-x-2 ml-4">
-                                                           
+
                                                             <button
                                                                 onClick={(e) => {
                                                                     e.stopPropagation();
@@ -377,7 +378,7 @@ const SubTaskList = ({
             <Modal
                 isOpen={showAddModal}
                 onClose={() => setShowAddModal(false)}
-                title="Add Daily Task"
+                title="Add Daily Progress"
             >
                 {canPerformActions && (
                     <SubTaskForm
