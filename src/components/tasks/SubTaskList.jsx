@@ -13,7 +13,7 @@ import {
 import SubTaskForm from './SubTaskForm';
 import Modal from '../common/Modal';
 import { TASK_STATUS } from '../../utils/constants';
-    import toast from 'react-hot-toast';
+import toast from 'react-hot-toast';
 
 const SubTaskList = ({
     days = [],
@@ -120,24 +120,8 @@ const SubTaskList = ({
 
 
     const handleDeleteClick = async (subTaskId) => {
-        if (!isManager) {
-            const confirmDelete = window.confirm('Are you sure you want to delete this subtask?');
-            if (!confirmDelete) return;
-
-            try {
-                await onDeleteSubTask(taskId, subTaskId);
-
-                // Show success toast
-                toast.success('Subtask deleted successfully!');
-
-                // Optional: instead of full reload, update state
-                // setSubTasks(subTasks.filter(st => st._id !== subTaskId));
-
-                window.location.reload(); // Reload after delete (optional if state updated)
-            } catch (error) {
-                console.error('Failed to delete subtask:', error);
-                toast.error('Failed to delete subtask. Please try again.');
-            }
+        if (!isManager && onDeleteSubTask) {
+            onDeleteSubTask(taskId, subTaskId);
         }
     };
 

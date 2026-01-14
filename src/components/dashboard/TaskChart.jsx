@@ -12,6 +12,8 @@ import {
 import Skeleton from 'react-loading-skeleton';
 
 const TaskChart = ({ data, isLoading }) => {
+  console.log("Data ", data);
+  
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (

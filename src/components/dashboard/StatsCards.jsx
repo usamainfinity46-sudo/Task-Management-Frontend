@@ -38,7 +38,7 @@ const StatCard = ({ title, value, icon: Icon, color }) => {
   );
 };
 
-const StatsCards = ({ stats }) => {
+const StatsCards = ({ stats, userRole, subtasks }) => {
   if (!stats) return null;
 
   // Normalize data from different backend structures
@@ -53,8 +53,22 @@ const StatsCards = ({ stats }) => {
     inProgress: 0,
     delayed: 0,
     teamMembers: 0,
-    activeCompanies: 0
+    activeCompanies: 0,
+    subtasks: {
+      total: 0,
+      completed: 0,
+      pending: 0,
+      inProgress: 0,
+      delayed: 0
+    }
   };
+
+  // If subtasks are passed directly (e.g. from generic stats), use them
+  if (subtasks) {
+    data.subtasks = subtasks;
+  } else if (stats.subtasks) {
+    data.subtasks = stats.subtasks;
+  }
 
   if (stats.taskCounts) {
     // User structure
@@ -118,6 +132,15 @@ const StatsCards = ({ stats }) => {
         icon={CalendarDaysIcon}
         color="blue"
       />
+
+      {userRole === 'staff' && (
+        <StatCard
+          title="Total Subtasks"
+          value={data.subtasks.total}
+          icon={CalendarDaysIcon}
+          color="blue"
+        />
+      )}
       <StatCard
         title="Completed Tasks"
         value={data.completed}

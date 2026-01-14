@@ -43,14 +43,14 @@ const Dashboard = () => {
   // Initial load
   useEffect(() => {
     loadDashboard();
-    
+
     // Set up auto-refresh every 5 minutes
     const refreshInterval = setInterval(() => {
       if (document.visibilityState === 'visible') {
         loadDashboard();
       }
     }, 5 * 60 * 1000); // 5 minutes
-    
+
     return () => clearInterval(refreshInterval);
   }, [loadDashboard]);
 
@@ -65,7 +65,7 @@ const Dashboard = () => {
 
   // Determine which data to use (prefer current dashboard, fall back to stats)
   const displayData = Object.keys(currentDashboard).length > 0 ? currentDashboard : stats;
-  
+
   // Get role-based message
   const getWelcomeMessage = () => {
     switch (user?.role) {
@@ -82,8 +82,8 @@ const Dashboard = () => {
     <div className="space-y-6">
       {/* Error Alert */}
       {error && (
-        <ErrorAlert 
-          message={error} 
+        <ErrorAlert
+          message={error}
           onDismiss={() => setError(null)}
           retryAction={loadDashboard}
         />
@@ -92,13 +92,13 @@ const Dashboard = () => {
       {/* Welcome Section with Refresh Button */}
       <div className="bg-white shadow rounded-lg p-6 relative">
         <div className="absolute top-4 right-4">
-          <RefreshButton 
+          <RefreshButton
             onClick={handleRefresh}
             isLoading={isLoading}
             lastUpdated={stats.lastUpdated}
           />
         </div>
-        
+
         <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-bold text-gray-900">
@@ -110,7 +110,7 @@ const Dashboard = () => {
           </div>
           <div className="hidden sm:block">
             <div className="text-sm text-gray-500">
-              {new Date().toLocaleDateString('en-US', { 
+              {new Date().toLocaleDateString('en-US', {
                 weekday: 'long',
                 year: 'numeric',
                 month: 'long',
@@ -122,16 +122,20 @@ const Dashboard = () => {
       </div>
 
       {/* Stats Overview */}
-      <StatsCards stats={displayData} />
+      <StatsCards
+        stats={displayData}
+        userRole={user?.role}
+        subtasks={stats?.subtasks} // Pass subtasks from generic stats if missing in displayData
+      />
 
       {/* Charts and Recent Activity */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <TaskChart 
-          data={chartData.length > 0 ? chartData : displayData.chartData || []} 
+        <TaskChart
+          data={chartData.length > 0 ? chartData : displayData.chartData || []}
           isLoading={isLoading}
         />
-        <RecentActivity 
-          activities={recentActivities.length > 0 ? recentActivities : displayData.recentActivities || []} 
+        <RecentActivity
+          activities={recentActivities.length > 0 ? recentActivities : displayData.recentActivities || []}
           isLoading={isLoading}
         />
       </div>
@@ -186,12 +190,11 @@ const Dashboard = () => {
                 <div>
                   <p className="font-medium">{task.title}</p>
                   <div className="flex items-center space-x-3 mt-1">
-                    <span className={`px-2 py-1 text-xs rounded-full ${
-                      task.status === 'completed' ? 'bg-green-100 text-green-800' :
-                      task.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
-                      task.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                      'bg-red-100 text-red-800'
-                    }`}>
+                    <span className={`px-2 py-1 text-xs rounded-full ${task.status === 'completed' ? 'bg-green-100 text-green-800' :
+                        task.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
+                          task.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                      }`}>
                       {task.status}
                     </span>
                     <span className="text-sm text-gray-500">
@@ -201,7 +204,7 @@ const Dashboard = () => {
                 </div>
                 <div className="w-12">
                   <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-                    <div 
+                    <div
                       className="h-full bg-blue-500 rounded-full"
                       style={{ width: `${task.progress || 0}%` }}
                     ></div>

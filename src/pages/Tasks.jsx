@@ -1,10 +1,10 @@
 // pages/Tasks.jsx
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { 
-  fetchTasks, 
-  createTask, 
-  updateTaskStatus, 
+import {
+  fetchTasks,
+  createTask,
+  updateTaskStatus,
   updateTask,
   deleteTask,
   updateSubTask,    // Add this
@@ -15,6 +15,7 @@ import TaskList from '../components/tasks/TaskList';
 import TaskForm from '../components/tasks/TaskForm';
 import TaskFilters from '../components/tasks/TaskFilters';
 import Modal from '../components/common/Modal';
+import ConfirmationDialog from '../components/common/ConfirmationDialog';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { PlusIcon, FunnelIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
@@ -36,6 +37,12 @@ const Tasks = () => {
   });
   const [showFilters, setShowFilters] = useState(false);
   const [initialTaskData, setInitialTaskData] = useState(null);
+  const [deleteConfirmation, setDeleteConfirmation] = useState({
+    isOpen: false,
+    type: 'task',
+    id: null,
+    subTaskId: null
+  });
 
   useEffect(() => {
     dispatch(fetchTasks(filters));
@@ -64,9 +71,9 @@ const Tasks = () => {
   // Handle Edit Task
   const handleEditTask = async (taskData) => {
     try {
-      await dispatch(updateTask({ 
-        taskId: taskData._id, 
-        taskData 
+      await dispatch(updateTask({
+        taskId: taskData._id,
+        taskData
       })).unwrap();
       toast.success('Task updated successfully!');
       setShowCreateModal(false);
@@ -77,16 +84,30 @@ const Tasks = () => {
   };
 
   // Handle Delete Task
-  const handleDeleteTask = async (taskId) => {
-    if (!window.confirm('Are you sure you want to delete this task?')) {
-      return;
-    }
-    
+  // Handle Delete Task Click
+  const handleDeleteTaskClick = (taskId) => {
+    setDeleteConfirmation({ isOpen: true, type: 'task', id: taskId });
+  };
+
+  // Handle Delete SubTask Click
+  const handleDeleteSubTaskClick = (taskId, subTaskId) => {
+    setDeleteConfirmation({ isOpen: true, type: 'subtask', id: taskId, subTaskId });
+  };
+
+  // Generic Confirm Delete Handler
+  const handleConfirmDelete = async () => {
+    const { type, id, subTaskId } = deleteConfirmation;
     try {
-      await dispatch(deleteTask(taskId)).unwrap();
-      toast.success('Task deleted successfully!');
+      if (type === 'task') {
+        await dispatch(deleteTask(id)).unwrap();
+        toast.success('Task deleted successfully!');
+      } else {
+        await dispatch(deleteSubTask({ taskId: id, subTaskId })).unwrap();
+        toast.success('Subtask deleted successfully!');
+      }
+      setDeleteConfirmation({ isOpen: false, type: 'task', id: null, subTaskId: null });
     } catch (error) {
-      toast.error(error || 'Failed to delete task');
+      toast.error(error || `Failed to delete ${type}`);
     }
   };
 
@@ -101,34 +122,23 @@ const Tasks = () => {
   };
 
   // Handle Delete Subtask
-  const handleDeleteSubTask = async (taskId, subTaskId) => {
-    if (!window.confirm('Are you sure you want to delete this subtask?')) {
-      return;
-    }
-    
-    try {
-      await dispatch(deleteSubTask({ taskId, subTaskId })).unwrap();
-      toast.success('Subtask deleted successfully!');
-    } catch (error) {
-      toast.error(error || 'Failed to delete subtask');
-    }
-  };
+
 
   // Handle Add Subtask (from SubTaskList component)
-const handleAddSubTask = async (taskId, subTaskData) => {
-  try {
-    // Dispatch the action with correct parameters
-    await dispatch(addSubTask({ 
-      taskId, 
-      subTaskData // This contains: date, description, status, hoursSpent, remarks
-    })).unwrap();
-    
-    // Refresh tasks
-    // dispatch(getTasks());
-  } catch (error) {
-    console.error('Failed to add subtask:', error);
-  }
-};
+  const handleAddSubTask = async (taskId, subTaskData) => {
+    try {
+      // Dispatch the action with correct parameters
+      await dispatch(addSubTask({
+        taskId,
+        subTaskData // This contains: date, description, status, hoursSpent, remarks
+      })).unwrap();
+
+      // Refresh tasks
+      // dispatch(getTasks());
+    } catch (error) {
+      console.error('Failed to add subtask:', error);
+    }
+  };
 
   // Handle Update Status
   const handleUpdateStatus = async (taskId, status) => {
@@ -223,10 +233,10 @@ const handleAddSubTask = async (taskId, subTaskData) => {
             tasks={tasks}
             onUpdateStatus={handleUpdateStatus}
             onUpdateSubTask={handleUpdateSubTask}
-            onDeleteSubTask={handleDeleteSubTask}
+            onDeleteSubTask={handleDeleteSubTaskClick}
             onAddSubTask={handleAddSubTask}
             onEdit={handleEditClick}
-            onDelete={handleDeleteTask}
+            onDelete={handleDeleteTaskClick}
             userRole={user?.role}
             currentUserId={user?._id}
           />
@@ -266,11 +276,10 @@ const handleAddSubTask = async (taskId, subTaskData) => {
                       <button
                         key={i + 1}
                         onClick={() => handlePageChange(i + 1)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${
-                          currentPage === i + 1
-                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
-                        }`}
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === i + 1
+                          ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                          }`}
                       >
                         {i + 1}
                       </button>
@@ -303,6 +312,17 @@ const handleAddSubTask = async (taskId, subTaskData) => {
           companyId={user?.company}
         />
       </Modal>
+
+      <ConfirmationDialog
+        isOpen={deleteConfirmation.isOpen}
+        onClose={() => setDeleteConfirmation({ ...deleteConfirmation, isOpen: false })}
+        onConfirm={handleConfirmDelete}
+        title={deleteConfirmation.type === 'task' ? 'Delete Task' : 'Delete Subtask'}
+        message={`Are you sure you want to delete this ${deleteConfirmation.type}?`}
+        confirmText="Delete"
+        type="danger"
+        isLoading={isLoading}
+      />
     </div>
   );
 };

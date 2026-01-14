@@ -107,11 +107,11 @@ const TaskList = ({
                     <div>
                       <span className="font-medium">Dates:</span> {format(new Date(task.startDate), 'MMM dd')} - {format(new Date(task.endDate), 'MMM dd, yyyy')}
                     </div>
-                    {task.company && (
+                    {/* {task.company && (
                       <div>
                         <span className="font-medium">Company:</span> {task.company.name}
                       </div>
-                    )}
+                    )} */}
                   </div>
                 </div>
                 {/* Actions */}

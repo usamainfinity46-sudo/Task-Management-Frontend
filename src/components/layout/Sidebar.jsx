@@ -24,7 +24,7 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
     { name: 'Tasks', href: '/tasks', icon: ClipboardDocumentListIcon, roles: ['admin', 'manager', 'staff'] },
     { name: 'Users', href: '/users', icon: UsersIcon, roles: ['admin', 'manager'] },
     { name: 'Companies', href: '/companies', icon: BuildingOfficeIcon, roles: ['admin'] },
-    { name: 'Reports', href: '/reports', icon: ChartBarIcon, roles: ['admin', 'manager', 'staff'] },
+    { name: 'Reports', href: '/reports', icon: ChartBarIcon, roles: ['admin', 'manager'] },
   ];
 
   const filteredNavigation = navigation.filter(item =>

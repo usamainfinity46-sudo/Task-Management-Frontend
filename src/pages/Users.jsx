@@ -1,10 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { fetchUsers, createUser, updateUser, deleteUser } from '../store/slices/userSlice';
-import { fetchCompanies} from '../store/slices/companySlice';
+import { fetchCompanies } from '../store/slices/companySlice';
 import UserList from '../components/users/UserList';
 import UserForm from '../components/users/UserForm';
 import Modal from '../components/common/Modal';
+import ConfirmationDialog from '../components/common/ConfirmationDialog';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { PlusIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
@@ -17,6 +18,7 @@ const Users = () => {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
+  const [deleteId, setDeleteId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -25,15 +27,15 @@ const Users = () => {
   }, [dispatch]);
 
   // console.log("companies frooo ", companies);
-  
-const filteredUsers = users.filter(user =>
-  user.role !== 'admin' &&
-  (
-    user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.role.toLowerCase().includes(searchTerm.toLowerCase())
-  )
-);
+
+  const filteredUsers = users.filter(user =>
+    user.role !== 'admin' &&
+    (
+      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.role.toLowerCase().includes(searchTerm.toLowerCase())
+    )
+  );
 
 
   const handleCreateUser = async (userData) => {
@@ -56,11 +58,16 @@ const filteredUsers = users.filter(user =>
     }
   };
 
-  const handleDeleteUser = async (userId) => {
-    if (window.confirm('Are you sure you want to delete this user?')) {
+  const handleDeleteClick = (userId) => {
+    setDeleteId(userId);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleteId) {
       try {
-        await dispatch(deleteUser(userId)).unwrap();
+        await dispatch(deleteUser(deleteId)).unwrap();
         toast.success('User deleted successfully!');
+        setDeleteId(null);
       } catch (error) {
         toast.error('Failed to delete user', error);
       }
@@ -88,7 +95,7 @@ const filteredUsers = users.filter(user =>
             Manage team members and their permissions
           </p>
         </div>
-        
+
         <button
           onClick={() => setShowCreateModal(true)}
           className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
@@ -122,7 +129,7 @@ const filteredUsers = users.filter(user =>
           users={filteredUsers}
           currentUser={currentUser}
           onEdit={setEditingUser}
-          onDelete={handleDeleteUser}
+          onDelete={handleDeleteClick}
           companies={companies}
         />
       )}
@@ -155,6 +162,17 @@ const filteredUsers = users.filter(user =>
           currentUser={currentUser}
         />
       </Modal>
+
+      <ConfirmationDialog
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleConfirmDelete}
+        title="Delete User"
+        message="Are you sure you want to delete this user?"
+        confirmText="Delete"
+        type="danger"
+        isLoading={isLoading}
+      />
     </div>
   );
 };

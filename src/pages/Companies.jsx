@@ -4,6 +4,7 @@ import { fetchCompanies, createCompany, updateCompany, deleteCompany } from '../
 import CompanyList from '../components/companies/CompanyList';
 import CompanyForm from '../components/companies/CompanyForm';
 import Modal from '../components/common/Modal';
+import ConfirmationDialog from '../components/common/ConfirmationDialog';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import { PlusIcon, BuildingOfficeIcon } from '@heroicons/react/24/outline';
 import toast from 'react-hot-toast';
@@ -15,6 +16,7 @@ const Companies = () => {
 
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingCompany, setEditingCompany] = useState(null);
+  const [deleteId, setDeleteId] = useState(null);
   const [searchTerm, setSearchTerm] = useState('');
 
   useEffect(() => {
@@ -22,7 +24,7 @@ const Companies = () => {
   }, [dispatch]);
 
   // console.log("companies ", companies);
-  
+
   const filteredCompanies = companies.filter(company =>
     company.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     company.email?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -48,11 +50,16 @@ const Companies = () => {
     }
   };
 
-  const handleDeleteCompany = async (companyId) => {
-    if (window.confirm('Are you sure you want to delete this company? This will also delete all associated users and tasks.')) {
+  const handleDeleteClick = (companyId) => {
+    setDeleteId(companyId);
+  };
+
+  const handleConfirmDelete = async () => {
+    if (deleteId) {
       try {
-        await dispatch(deleteCompany(companyId)).unwrap();
+        await dispatch(deleteCompany(deleteId)).unwrap();
         toast.success('Company deleted successfully!');
+        setDeleteId(null);
       } catch (error) {
         toast.error('Failed to delete company', error);
       }
@@ -131,7 +138,7 @@ const Companies = () => {
         <CompanyList
           companies={filteredCompanies}
           onEdit={setEditingCompany}
-          onDelete={handleDeleteCompany}
+          onDelete={handleDeleteClick}
         />
       )}
 
@@ -161,6 +168,18 @@ const Companies = () => {
           onCancel={() => setEditingCompany(null)}
         />
       </Modal>
+
+      {/* Delete Confirmation Dialog */}
+      <ConfirmationDialog
+        isOpen={!!deleteId}
+        onClose={() => setDeleteId(null)}
+        onConfirm={handleConfirmDelete}
+        title="Delete Company"
+        message="Are you sure you want to delete this company? This will also delete all associated users and tasks."
+        confirmText="Delete"
+        type="danger"
+        isLoading={isLoading}
+      />
     </div>
   );
 };
