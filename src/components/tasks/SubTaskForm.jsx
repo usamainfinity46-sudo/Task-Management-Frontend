@@ -19,28 +19,50 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
   const [isManager, setIsManager] = useState(false);
   const [loadingRole, setLoadingRole] = useState(true);
 
-  // Set default date
-  useEffect(() => {
-    if (!formData.date && task) {
-      const getDateOnly = (dateStr) => new Date(dateStr).toISOString().split('T')[0];
-
-      const today = getDateOnly(new Date());
-      const taskStart = getDateOnly(task.startDate);
-      const taskEnd = getDateOnly(task.endDate);
-
-      let defaultDate = today;
-      if (today < taskStart) defaultDate = taskStart;
-      if (today > taskEnd) defaultDate = taskEnd;
-
-      setFormData(prev => ({ ...prev, date: defaultDate }));
-    }
-  }, [task, formData.date]);
-
   // Helper function to get date-only string (YYYY-MM-DD)
-  const getDateOnly = (dateString) => {
-    const date = new Date(dateString);
-    return date.toISOString().split('T')[0];
+  const getDateOnly = (dateInput) => {
+    if (!dateInput) return '';
+    
+    let date;
+    if (typeof dateInput === 'string') {
+      date = new Date(dateInput);
+    } else if (dateInput instanceof Date) {
+      date = dateInput;
+    } else {
+      return '';
+    }
+    
+    // Handle invalid dates
+    if (isNaN(date.getTime())) {
+      return '';
+    }
+    
+    // Get date in YYYY-MM-DD format
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    
+    return `${year}-${month}-${day}`;
   };
+
+  // Set default date to today
+  useEffect(() => {
+    // If editing existing data, use its date
+    if (initialData && initialData.date) {
+      return;
+    }
+    
+    // Only set default date if no date is set
+    if (!formData.date) {
+      const today = new Date();
+      const todayStr = getDateOnly(today);
+      
+      setFormData(prev => ({ 
+        ...prev, 
+        date: todayStr 
+      }));
+    }
+  }, [initialData, formData.date]);
 
   useEffect(() => {
     const getUserRole = () => {
@@ -66,20 +88,9 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
   const validate = () => {
     const newErrors = {};
 
-    // Validate date
+    // Validate date - just check if it exists
     if (!formData.date) {
       newErrors.date = 'Date is required';
-    } else if (task) {
-      const selectedDateOnly = getDateOnly(formData.date);
-      const startDateOnly = getDateOnly(task.startDate);
-      const endDateOnly = getDateOnly(task.endDate);
-
-      if (selectedDateOnly < startDateOnly) {
-        newErrors.date = 'Date cannot be before task start date';
-      }
-      if (selectedDateOnly > endDateOnly) {
-        newErrors.date = 'Date cannot be after task end date';
-      }
     }
 
     // Validate description
@@ -99,21 +110,15 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
   const handleSubmit = (e) => {
     e.preventDefault();
 
-    console.log('Form data before validation:', formData);
-
     if (validate()) {
-      // Ensure date is in YYYY-MM-DD format
       const submissionData = {
         ...formData,
-        date: getDateOnly(formData.date),
+        date: formData.date,
         description: formData.description.trim(),
         hoursSpent: Number(formData.hoursSpent) || 0
       };
 
-      console.log('Submitting data:', submissionData);
       onSubmit(submissionData);
-    } else {
-      console.log('Validation errors:', errors);
     }
   };
 
@@ -132,7 +137,6 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
 
   const canPerformActions = (userRole === 'manager' || userRole === 'admin') && !isManager;
 
-
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -147,10 +151,10 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
               name="date"
               value={formData.date}
               onChange={handleChange}
-              className={`w-full pl-10 px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 ${errors.date ? 'border-red-500' : 'border-gray-300'
-                }`}
-              min={task ? new Date(task.startDate).toISOString().split('T')[0] : ''}
-              max={task ? new Date(task.endDate).toISOString().split('T')[0] : ''}
+              className={`w-full pl-10 px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+                errors.date ? 'border-red-500' : 'border-gray-300'
+              }`}
+              required
             />
           </div>
           {errors.date && (
@@ -170,8 +174,9 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
             min="0"
             max="24"
             step="0.5"
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 ${errors.hoursSpent ? 'border-red-500' : 'border-gray-300'
-              }`}
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+              errors.hoursSpent ? 'border-red-500' : 'border-gray-300'
+            }`}
             placeholder="0"
           />
           {errors.hoursSpent && (
@@ -189,9 +194,11 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
           value={formData.description}
           onChange={handleChange}
           rows="3"
-          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 ${errors.description ? 'border-red-500' : 'border-gray-300'
-            }`}
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 ${
+            errors.description ? 'border-red-500' : 'border-gray-300'
+          }`}
           placeholder="What needs to be done on this day?"
+          required
         />
         {errors.description && (
           <p className="mt-1 text-sm text-red-600">{errors.description}</p>
@@ -211,7 +218,8 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
           placeholder="Any additional notes or comments..."
         />
       </div>
-      {canPerformActions &&
+      
+      {canPerformActions && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
             Status
@@ -227,8 +235,8 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
             <option value="completed">Completed</option>
             <option value="delayed">Delayed</option>
           </select>
-        </div>}
-
+        </div>
+      )}
 
       <div className="flex justify-end space-x-3 pt-2">
         <button
