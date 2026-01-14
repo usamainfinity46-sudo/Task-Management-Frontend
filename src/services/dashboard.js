@@ -30,3 +30,7 @@ export const dashboardService = {
 export const getDashboardCards = async () => {
   return api.get('/dashboard/stats'); 
 };
+
+export const getRecentActivity = async () => {
+  return api.get('/dashboard/user')
+}

@@ -1,14 +1,14 @@
-/* eslint-disable react-hooks/purity */
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { format } from 'date-fns';
-import { 
+import {
   UserPlusIcon,
   DocumentPlusIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
   ClockIcon
 } from '@heroicons/react/24/outline';
-import { Link } from "react-router-dom";
+import { Link } from 'react-router-dom';
+import { getRecentActivity } from '../../services/dashboard';
 
 
 const ActivityItem = ({ activity }) => {
@@ -22,23 +22,9 @@ const ActivityItem = ({ activity }) => {
         return <CheckCircleIcon className="h-5 w-5 text-green-500" />;
       case 'task_delayed':
         return <ExclamationTriangleIcon className="h-5 w-5 text-red-500" />;
+      case 'task_updated':
       default:
         return <ClockIcon className="h-5 w-5 text-gray-500" />;
-    }
-  };
-
-  const getDescription = (activity) => {
-    switch (activity.type) {
-      case 'user_added':
-        return `${activity.user} added ${activity.target} to the team`;
-      case 'task_created':
-        return `${activity.user} created task "${activity.task}"`;
-      case 'task_completed':
-        return `${activity.user} completed "${activity.task}"`;
-      case 'task_delayed':
-        return `${activity.task} is delayed`;
-      default:
-        return activity.description;
     }
   };
 
@@ -49,8 +35,11 @@ const ActivityItem = ({ activity }) => {
           {getIcon(activity.type)}
         </div>
       </div>
+
       <div className="flex-1 min-w-0">
-        <p className="text-sm text-gray-900">{getDescription(activity)}</p>
+        <p className="text-sm text-gray-900">
+          {activity.description}
+        </p>
         <p className="text-xs text-gray-500 mt-1">
           {format(new Date(activity.timestamp), 'MMM dd, hh:mm a')}
         </p>
@@ -59,56 +48,55 @@ const ActivityItem = ({ activity }) => {
   );
 };
 
-const RecentActivity = ({ activities }) => {
-  const sampleActivities = activities.length > 0 ? activities : [
-    {
-      id: 1,
-      type: 'task_completed',
-      user: 'John Doe',
-      task: 'Project Setup',
-      timestamp: new Date().toISOString()
-    },
-    {
-      id: 2,
-      type: 'user_added',
-      user: 'Admin',
-      target: 'Jane Smith',
-      timestamp: new Date(Date.now() - 3600000).toISOString()
-    },
-    {
-      id: 3,
-      type: 'task_created',
-      user: 'Manager',
-      task: 'Dashboard Implementation',
-      timestamp: new Date(Date.now() - 7200000).toISOString()
-    },
-    {
-      id: 4,
-      type: 'task_delayed',
-      task: 'API Integration',
-      timestamp: new Date(Date.now() - 10800000).toISOString()
-    }
-  ];
+const RecentActivity = () => {
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchActivity = async () => {
+      try {
+        const res = await getRecentActivity();
+        setActivities(res.data.data.recentActivity || []);
+      } catch (error) {
+        console.error('Failed to fetch recent activity', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchActivity();
+  }, []);
 
   return (
     <div className="bg-white rounded-lg shadow p-6">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Recent Activity</h3>
-          <p className="text-sm text-gray-600">Latest updates from your team</p>
+          <h3 className="text-lg font-semibold text-gray-900">
+            Recent Activity
+          </h3>
+          <p className="text-sm text-gray-600">
+            Latest updates from your team
+          </p>
         </div>
-        <Link to='/tasks'>
-        <button className="text-sm text-blue-600 hover:text-blue-700">
-          View All
-        </button>
+
+        <Link to="/tasks">
+          <button className="text-sm text-blue-600 hover:text-blue-700">
+            View All
+          </button>
         </Link>
       </div>
-      
-      <div className="space-y-1">
-        {sampleActivities.map((activity) => (
-          <ActivityItem key={activity.id} activity={activity} />
-        ))}
-      </div>
+
+      {loading ? (
+        <p className="text-sm text-gray-500">Loading activity...</p>
+      ) : activities.length === 0 ? (
+         <p className="text-sm text-gray-500">No recent activity</p>
+      ) : (
+        <div className="space-y-1">
+          {activities.map((activity, idx) => (
+            <ActivityItem key={idx} activity={activity} />
+          ))}
+        </div>
+      )}
     </div>
   );
 };

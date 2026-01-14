@@ -6,11 +6,11 @@ import {
   UserGroupIcon,
   ArrowTrendingUpIcon,
   BuildingOfficeIcon,
-  
+
 } from '@heroicons/react/24/outline';
 import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 
-import { getDashboardCards } from '../../services/dashboard';
+
 
 const StatCard = ({ title, value, icon: Icon, color }) => {
   const colors = {
@@ -38,66 +38,128 @@ const StatCard = ({ title, value, icon: Icon, color }) => {
   );
 };
 
-const StatsCards = () => {
-  const [cards, setCards] = useState(null);
+const StatsCards = ({ stats }) => {
+  if (!stats) return null;
 
-  useEffect(() => {
-    const loadCards = async () => {
-      const res = await getDashboardCards();
-      setCards(res.data.data);
-      // console.log("cards ", cards);
-      
+  // Normalize data from different backend structures
+  // 1. User/Shared: stats.taskCounts (total, completed, pending, etc.)
+  // 2. Manager: stats.teamStats (totalTasks, completedTasks, etc.)
+  // 3. Admin: stats (totalTasks, tasksByStatus, etc.) or stats.overview
+
+  let data = {
+    total: 0,
+    completed: 0,
+    pending: 0,
+    inProgress: 0,
+    delayed: 0,
+    teamMembers: 0,
+    activeCompanies: 0
+  };
+
+  if (stats.taskCounts) {
+    // User structure
+    data = {
+      ...data,
+      total: stats.taskCounts.total,
+      completed: stats.taskCounts.completed,
+      pending: stats.taskCounts.pending,
+      inProgress: stats.taskCounts.inProgress,
+      delayed: stats.taskCounts.delayed
     };
-    loadCards();
-  }, []);
+  } else if (stats.teamStats) {
+    // Manager structure
+    data = {
+      ...data,
+      total: stats.teamStats.totalTasks,
+      completed: stats.teamStats.completedTasks,
+      pending: stats.teamStats.pendingTasks,
+      inProgress: stats.teamStats.inProgressTasks,
+      delayed: stats.teamStats.delayedTasks,
+      teamMembers: stats.teamStats.totalMembers
+    };
+  } else if (stats.totalTasks !== undefined) {
+    // Admin/Generic structure
+    // Admin might have tasksByStatus but let's try to map common keys first
+    data = {
+      ...data,
+      total: stats.totalTasks,
+      // Admin dashboard sends 'overview' or direct stats. 
+      // If direct mapping isn't available, we might default to 0 or check nested arrays.
+      // Based on dashboardController:
+      // tasksByStatus: [{_id: 'completed', count: 10}, ...]
 
-  if (!cards) return null;
-// console.log("cards ", cards);
+      activeCompanies: stats.totalCompanies || 0,
+      teamMembers: stats.totalUsers || 0
+    };
+
+    if (stats.tasksByStatus && Array.isArray(stats.tasksByStatus)) {
+      data.completed = stats.tasksByStatus.find(s => s._id === 'completed')?.count || 0;
+      data.pending = stats.tasksByStatus.find(s => s._id === 'pending')?.count || 0;
+      data.inProgress = stats.tasksByStatus.find(s => s._id === 'in-progress')?.count || 0;
+      data.delayed = stats.tasksByStatus.find(s => s._id === 'delayed')?.count || 0;
+    }
+  } else if (stats.tasks) {
+    // General stats structure
+    data = {
+      ...data,
+      total: stats.tasks.total,
+      completed: stats.tasks.completed,
+      pending: stats.tasks.pending,
+      inProgress: stats.tasks.inProgress,
+      delayed: stats.tasks.delayed
+    }
+  }
 
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
       <StatCard
         title="Total Tasks"
-        value={cards.totalTasks}
+        value={data.total}
         icon={CalendarDaysIcon}
         color="blue"
       />
       <StatCard
         title="Completed Tasks"
-        value={cards.completedTasks}
+        value={data.completed}
         icon={CheckCircleIcon}
         color="green"
       />
       <StatCard
         title="In Progress"
-        value={cards.inProgressTasks}
+        value={data.inProgress}
         icon={ArrowTrendingUpIcon}
         color="orange"
       />
       <StatCard
         title="Pending Tasks"
-        value={cards.pendingTasks}
+        value={data.pending}
         icon={ClockIcon}
         color="yellow"
       />
       <StatCard
         title="Delay Tasks"
-        value={cards.delayedTasks}
-        icon={ExclamationTriangleIcon }
+        value={data.delayed}
+        icon={ExclamationTriangleIcon}
         color="red"
       />
-      <StatCard
-        title="Team Members"
-        value={cards.teamMembers}
-        icon={UserGroupIcon}
-        color="purple"
-      />
-      <StatCard
-        title="Active Companies"
-        value={cards.activeCompanies}
-        icon={BuildingOfficeIcon}
-        color="indigo"
-      />
+
+      {(data.teamMembers > 0 || stats.teamStats) && (
+        <StatCard
+          title="Team Members"
+          value={data.teamMembers}
+          icon={UserGroupIcon}
+          color="purple"
+        />
+      )}
+
+      {data.activeCompanies > 0 && (
+        <StatCard
+          title="Active Companies"
+          value={data.activeCompanies}
+          icon={BuildingOfficeIcon}
+          color="indigo"
+        />
+      )}
     </div>
   );
 };
