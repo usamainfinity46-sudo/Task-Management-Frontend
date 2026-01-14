@@ -12,13 +12,14 @@ import Tasks from './pages/Tasks';
 import Users from './pages/Users';
 import Companies from './pages/Companies';
 import Reports from './pages/Reports';
+import MonthlyWorkingSheet from './pages/MonthlyWorkingSheet';
 import Profile from './pages/Profile';
 
 function App() {
   return (
     <Provider store={store}>
       <Router>
-        <Toaster 
+        <Toaster
           position="top-right"
           toastOptions={{
             duration: 4000,
@@ -46,7 +47,7 @@ function App() {
           {/* Public Routes */}
           <Route path="/login" element={<Login />} />
           {/* <Route path="/register" element={<Register />} /> */}
-          
+
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route element={<Layout />}>
@@ -56,10 +57,11 @@ function App() {
               <Route path="/users" element={<Users />} />
               <Route path="/companies" element={<Companies />} />
               <Route path="/reports" element={<Reports />} />
+              <Route path="/monthly-chart" element={<MonthlyWorkingSheet />} />
               <Route path="/profile" element={<Profile />} />
             </Route>
           </Route>
-          
+
           {/* Catch all */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
         </Routes>
