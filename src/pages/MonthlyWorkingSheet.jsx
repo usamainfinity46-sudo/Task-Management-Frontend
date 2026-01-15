@@ -231,6 +231,11 @@ const MonthlyWorkingSheet = () => {
                 year: selectedYear
             };
 
+            // Add role filter if selected
+            if (selectedRole) {
+                params.role = selectedRole;
+            }
+
             // Add userId filter if a user is selected
             if (selectedUserId) {
                 params.userId = selectedUserId;
@@ -255,7 +260,7 @@ const MonthlyWorkingSheet = () => {
         } finally {
             setLoading(false);
         }
-    }, [selectedMonth, selectedYear, selectedUserId, processData]);
+    }, [selectedMonth, selectedYear, selectedUserId, selectedRole, processData]);
 
     useEffect(() => {
         fetchAssignments();
