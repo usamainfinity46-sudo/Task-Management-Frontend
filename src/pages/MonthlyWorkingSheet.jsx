@@ -6,10 +6,12 @@ import {
     FiCalendar,
     FiUser,
     FiFileText,
-    FiAlertCircle
+    FiAlertCircle,
+    FiChevronDown
 } from "react-icons/fi";
 import { FaCalendarCheck } from "react-icons/fa";
 import { taskService } from "../services/tasks";
+import { userService } from "../services/users";
 import toast from "react-hot-toast";
 
 const MonthlyWorkingSheet = () => {
@@ -20,6 +22,10 @@ const MonthlyWorkingSheet = () => {
     const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
     const [workStatus, setWorkStatus] = useState({});
     const [dailyProgress, setDailyProgress] = useState({});
+    const [selectedRole, setSelectedRole] = useState(''); // 'staff' or 'manager'
+    const [selectedUserId, setSelectedUserId] = useState(''); // Selected user ID
+    const [users, setUsers] = useState([]); // Users list based on role
+    const [loadingUsers, setLoadingUsers] = useState(false);
     const itemsPerPage = 8;
 
     // Updated work status options
@@ -51,22 +57,22 @@ const MonthlyWorkingSheet = () => {
         const currentDay = new Date(selectedYear, selectedMonth - 1, day);
         const taskStart = new Date(startDate);
         const taskEnd = new Date(endDate);
-        
+
         // Reset times to compare only dates
         taskStart.setHours(0, 0, 0, 0);
         taskEnd.setHours(23, 59, 59, 999);
         currentDay.setHours(0, 0, 0, 0);
-        
+
         return currentDay >= taskStart && currentDay <= taskEnd;
     };
 
     // Find progress for a specific day
     const findDayProgress = (task, day) => {
         if (!task.days || !Array.isArray(task.days)) return null;
-        
+
         const targetDate = new Date(selectedYear, selectedMonth - 1, day);
         targetDate.setHours(0, 0, 0, 0);
-        
+
         return task.days.find(dayEntry => {
             const entryDate = new Date(dayEntry.date);
             entryDate.setHours(0, 0, 0, 0);
@@ -80,34 +86,34 @@ const MonthlyWorkingSheet = () => {
         const startDate = new Date(task.startDate);
         const endDate = new Date(task.endDate);
         const currentDay = new Date(selectedYear, selectedMonth - 1, day);
-        
+
         // Check if day is within task range
         if (!isDayInTaskRange(day, startDate, endDate)) {
             return 'not-started';
         }
-        
+
         // Check for specific day progress - ONLY use this day's data
         const dayProgress = findDayProgress(task, day);
-        
+
         if (dayProgress) {
             // Check if day has subtasks
             if (dayProgress.subTasks && dayProgress.subTasks.length > 0) {
                 const allCompleted = dayProgress.subTasks.every(st => st.status === 'completed');
-                const anyInProgress = dayProgress.subTasks.some(st => 
+                const anyInProgress = dayProgress.subTasks.some(st =>
                     st.status === 'in-progress' || st.status === 'pending'
                 );
-                
+
                 if (allCompleted) return 'completed';
                 if (anyInProgress || dayProgress.subTasks.length > 0) return 'in-progress';
             }
-            
+
             // Check for hours logged on THIS specific day
             const dayHours = dayProgress.subTasks?.reduce((sum, st) => sum + (st.hoursSpent || 0), 0) || 0;
             if (dayHours > 0) {
                 return 'in-progress';
             }
         }
-        
+
         // If no work done on this specific day, it's pending
         // DO NOT check overall task status - each day is independent
         return 'pending';
@@ -117,21 +123,21 @@ const MonthlyWorkingSheet = () => {
     const getDayProgressDetails = (task, day) => {
         const dayProgress = findDayProgress(task, day);
         if (!dayProgress) return null;
-        
+
         const details = {
             hoursLogged: dayProgress.hoursLogged || 0,
             subTasks: dayProgress.subTasks || [],
             remarks: dayProgress.remarks || '',
             date: dayProgress.date
         };
-        
+
         // Calculate subtask stats
         if (details.subTasks.length > 0) {
             details.completedSubtasks = details.subTasks.filter(st => st.status === 'completed').length;
             details.totalSubtasks = details.subTasks.length;
             details.subtaskCompletion = Math.round((details.completedSubtasks / details.totalSubtasks) * 100);
         }
-        
+
         return details;
     };
 
@@ -148,7 +154,7 @@ const MonthlyWorkingSheet = () => {
             // Calculate status for each day in the month
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayStatus = getDayStatus(task, day);
-                
+
                 if (dayStatus !== 'not-started') {
                     status[task._id][day] = {
                         status: dayStatus,
@@ -159,7 +165,7 @@ const MonthlyWorkingSheet = () => {
                         completedSubtasks: task.completedSubtasks,
                         totalSubtasks: task.totalSubtasks
                     };
-                    
+
                     // Get daily progress details
                     const dayProgress = getDayProgressDetails(task, day);
                     if (dayProgress) {
@@ -174,14 +180,63 @@ const MonthlyWorkingSheet = () => {
         setAssignments(tasks);
     }, [selectedMonth, selectedYear]);
 
+    // Fetch users based on selected role
+    const fetchUsersByRole = useCallback(async (role) => {
+        if (!role) {
+            setUsers([]);
+            return;
+        }
+
+        try {
+            setLoadingUsers(true);
+            const res = await userService.getUsers({ role });
+            if (res.data && res.data.success && res.data.users) {
+                setUsers(res.data.users);
+            } else {
+                setUsers([]);
+            }
+        } catch (error) {
+            console.error("Failed to fetch users", error);
+            toast.error("Failed to load users");
+            setUsers([]);
+        } finally {
+            setLoadingUsers(false);
+        }
+    }, []);
+
+    // Handle role change
+    const handleRoleChange = (e) => {
+        const role = e.target.value;
+        setSelectedRole(role);
+        setSelectedUserId(''); // Reset user selection when role changes
+        if (role) {
+            fetchUsersByRole(role);
+        } else {
+            setUsers([]);
+        }
+    };
+
+    // Handle user selection
+    const handleUserChange = (e) => {
+        const userId = e.target.value;
+        setSelectedUserId(userId);
+    };
+
     // Fetch assignments
     const fetchAssignments = useCallback(async () => {
         try {
             setLoading(true);
-            const res = await taskService.getReport({
+            const params = {
                 month: selectedMonth,
                 year: selectedYear
-            });
+            };
+
+            // Add userId filter if a user is selected
+            if (selectedUserId) {
+                params.userId = selectedUserId;
+            }
+
+            const res = await taskService.getReport(params);
 
             if (res.data && res.data.success && res.data.report && res.data.report.detailed) {
                 processData(res.data.report.detailed);
@@ -200,11 +255,18 @@ const MonthlyWorkingSheet = () => {
         } finally {
             setLoading(false);
         }
-    }, [selectedMonth, selectedYear, processData]);
+    }, [selectedMonth, selectedYear, selectedUserId, processData]);
 
     useEffect(() => {
         fetchAssignments();
     }, [fetchAssignments]);
+
+    // Fetch users when role is selected
+    useEffect(() => {
+        if (selectedRole) {
+            fetchUsersByRole(selectedRole);
+        }
+    }, [selectedRole, fetchUsersByRole]);
 
     // Pagination calculations
     const totalItems = assignments.length;
@@ -216,20 +278,20 @@ const MonthlyWorkingSheet = () => {
     const getWorkStatusDisplay = (assignmentId, day) => {
         const data = workStatus[assignmentId]?.[day];
         const progressData = dailyProgress[assignmentId]?.[day];
-        
+
         if (!data) {
-            return { 
-                config: workStatusOptions.find(opt => opt.value === 'not-started'), 
+            return {
+                config: workStatusOptions.find(opt => opt.value === 'not-started'),
                 taskData: null,
                 progressData: null
             };
         }
-        
+
         const statusConfig = workStatusOptions.find(opt => opt.value === data.status);
-        return { 
-            config: statusConfig, 
+        return {
+            config: statusConfig,
             taskData: data,
-            progressData: progressData 
+            progressData: progressData
         };
     };
 
@@ -237,10 +299,10 @@ const MonthlyWorkingSheet = () => {
     const handleDayCellClick = (taskId, day) => {
         const status = workStatus[taskId]?.[day];
         const progress = dailyProgress[taskId]?.[day];
-        
+
         if (status) {
             console.log(`Task ${taskId}, Day ${day}:`, { status, progress });
-            
+
             if (progress) {
                 toast.success(`Day ${day}: ${progress.hoursLogged} hours logged, ${progress.subTasks?.length || 0} subtasks`);
             } else {
@@ -288,7 +350,7 @@ const MonthlyWorkingSheet = () => {
                     if (status.status === 'completed') completedDays++;
                     if (status.status === 'in-progress') inProgressDays++;
                     if (status.status === 'pending') pendingDays++;
-                    
+
                     // Add progress stats
                     const progress = dailyProgress[assignment._id]?.[parseInt(day)];
                     if (progress) {
@@ -299,10 +361,10 @@ const MonthlyWorkingSheet = () => {
             }
         });
 
-        return { 
-            totalWorkDays, 
-            completedDays, 
-            inProgressDays, 
+        return {
+            totalWorkDays,
+            completedDays,
+            inProgressDays,
             pendingDays,
             totalHoursLogged,
             totalSubtasksCompleted
@@ -312,7 +374,7 @@ const MonthlyWorkingSheet = () => {
     // Format date for display
     const formatDate = (dateString) => {
         const date = new Date(dateString);
-        return date.toLocaleDateString('en-US', { 
+        return date.toLocaleDateString('en-US', {
             weekday: 'short',
             month: 'short',
             day: 'numeric'
@@ -341,6 +403,44 @@ const MonthlyWorkingSheet = () => {
                     </div>
                 </div>
                 <div className="flex items-center gap-4">
+                    {/* Role Filter Dropdown */}
+                    <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                            <FiUser className="w-5 h-5 text-gray-400" />
+                        </div>
+                        <select
+                            value={selectedRole}
+                            onChange={handleRoleChange}
+                            className="pl-12 pr-10 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 bg-white transition-all duration-200 hover:border-gray-400 appearance-none min-w-[140px]"
+                        >
+                            <option value="">All Roles</option>
+                            <option value="staff">Staff</option>
+                            <option value="manager">Manager</option>
+                        </select>
+                    </div>
+
+                    {/* User Filter Dropdown */}
+                    {selectedRole && (
+                        <div className="relative">
+                            <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                                <FiUser className="w-5 h-5 text-gray-400" />
+                            </div>
+                            <select
+                                value={selectedUserId}
+                                onChange={handleUserChange}
+                                disabled={loadingUsers || users.length === 0}
+                                className="pl-12 pr-10 py-2.5 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500/30 focus:border-blue-500 bg-white transition-all duration-200 hover:border-gray-400 appearance-none min-w-[180px] disabled:opacity-50 disabled:cursor-not-allowed"
+                            >
+                                <option value="">All {selectedRole === 'staff' ? 'Staff' : 'Managers'}</option>
+                                {users.map((user) => (
+                                    <option key={user._id} value={user._id}>
+                                        {user.name} {user.email ? `(${user.email})` : ''}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
+
                     {/* Year Selector */}
                     <div className="relative">
                         <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -378,6 +478,37 @@ const MonthlyWorkingSheet = () => {
                     </div>
                 </div>
             </div>
+
+            {/* Filter Indicator */}
+            {(selectedRole || selectedUserId) && (
+                <div className="mb-3 flex-shrink-0">
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                            <FiUser className="w-4 h-4 text-blue-600" />
+                            <span className="text-sm text-blue-800 font-medium">
+                                {selectedUserId
+                                    ? `Showing data for: ${users.find(u => u._id === selectedUserId)?.name || 'Selected User'}`
+                                    : selectedRole
+                                        ? `Showing all ${selectedRole === 'staff' ? 'Staff' : 'Managers'}`
+                                        : 'All Users'
+                                }
+                            </span>
+                        </div>
+                        {(selectedRole || selectedUserId) && (
+                            <button
+                                onClick={() => {
+                                    setSelectedRole('');
+                                    setSelectedUserId('');
+                                    setUsers([]);
+                                }}
+                                className="text-xs text-blue-600 hover:text-blue-800 underline"
+                            >
+                                Clear Filter
+                            </button>
+                        )}
+                    </div>
+                </div>
+            )}
 
             {/* Summary Stats */}
             <div className="mb-4 flex-shrink-0">
@@ -484,9 +615,9 @@ const MonthlyWorkingSheet = () => {
                                     <td className="border border-gray-300 px-3 py-2">
                                         <div className="flex items-center gap-2 mb-1">
                                             <span className="text-[10px] text-gray-400 font-mono">#{assignment.taskId?.slice(-6)}</span>
-                                            <span className={`text-[10px] px-2 py-0.5 rounded-full ${assignment.priority === 'high' ? 'bg-red-100 text-red-800' : 
-                                                                assignment.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' : 
-                                                                'bg-green-100 text-green-800'}`}>
+                                            <span className={`text-[10px] px-2 py-0.5 rounded-full ${assignment.priority === 'high' ? 'bg-red-100 text-red-800' :
+                                                assignment.priority === 'medium' ? 'bg-yellow-100 text-yellow-800' :
+                                                    'bg-green-100 text-green-800'}`}>
                                                 {assignment.priority}
                                             </span>
                                         </div>
@@ -574,20 +705,20 @@ const MonthlyWorkingSheet = () => {
                     style={{ left: tooltipData.x, top: tooltipData.y }}
                 >
                     <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 translate-y-1/2 rotate-45 w-3 h-3 bg-white border-r border-b border-gray-200"></div>
-                    
+
                     {/* Task Header */}
                     <div className="mb-3 pb-2 border-b border-gray-100">
                         <p className="text-xs font-semibold text-gray-800">{tooltipData.data.taskData.taskTitle}</p>
                         <p className="text-xs text-gray-600 mt-1 line-clamp-2">{tooltipData.data.taskData.taskDescription}</p>
                     </div>
-                    
+
                     {/* Overall Task Status */}
                     <div className="mb-3">
                         <div className="flex items-center justify-between mb-2">
                             <span className="text-xs font-medium text-gray-700">Overall Task Status:</span>
                             <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${tooltipData.data.taskData.status === 'completed' ? 'bg-green-100 text-green-800' :
                                 tooltipData.data.taskData.status === 'in-progress' ? 'bg-blue-100 text-blue-800' :
-                                'bg-yellow-100 text-yellow-800'}`}>
+                                    'bg-yellow-100 text-yellow-800'}`}>
                                 {tooltipData.data.taskData.status.toUpperCase()}
                             </span>
                         </div>
@@ -597,7 +728,7 @@ const MonthlyWorkingSheet = () => {
                             <span>Subtasks: {tooltipData.data.taskData.completedSubtasks || 0}/{tooltipData.data.taskData.totalSubtasks || 0}</span>
                         </div>
                     </div>
-                    
+
                     {/* Daily Progress Section */}
                     {tooltipData.data.progressData ? (
                         <div>
@@ -605,7 +736,7 @@ const MonthlyWorkingSheet = () => {
                                 <FiCalendar className="w-3 h-3 text-blue-500" />
                                 <span className="text-xs font-medium text-gray-700">Daily Progress</span>
                             </div>
-                            
+
                             {/* Hours Logged */}
                             {tooltipData.data.progressData.hoursLogged > 0 && (
                                 <div className="flex items-center justify-between mb-2">
@@ -615,7 +746,7 @@ const MonthlyWorkingSheet = () => {
                                     </span>
                                 </div>
                             )}
-                            
+
                             {/* Subtasks */}
                             {tooltipData.data.progressData.subTasks && tooltipData.data.progressData.subTasks.length > 0 && (
                                 <div className="mb-2">
@@ -630,7 +761,7 @@ const MonthlyWorkingSheet = () => {
                                             <div key={idx} className="flex items-start gap-2">
                                                 <div className={`mt-1 w-2 h-2 rounded-full flex-shrink-0 ${subTask.status === 'completed' ? 'bg-green-500' :
                                                     subTask.status === 'in-progress' ? 'bg-blue-500' : 'bg-yellow-500'
-                                                }`} />
+                                                    }`} />
                                                 <div className="flex-1">
                                                     <p className="text-xs text-gray-700 line-clamp-2">{subTask.description}</p>
                                                     {subTask.hoursSpent > 0 && (
@@ -645,7 +776,7 @@ const MonthlyWorkingSheet = () => {
                                     </div>
                                 </div>
                             )}
-                            
+
                             {/* Remarks */}
                             {tooltipData.data.progressData.remarks && (
                                 <div className="mt-2 pt-2 border-t border-gray-100">

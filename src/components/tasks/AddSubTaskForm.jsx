@@ -81,7 +81,7 @@ const AddSubTaskForm = ({ task, onClose, onAdded }) => {
         </div>
 
         <div>
-          <label className="font-semibold">Hours Spent</label>
+          <label className="font-semibold">Hours to spend</label>
           <input
             type="number"
             min="0"
