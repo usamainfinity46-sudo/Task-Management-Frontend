@@ -147,6 +147,23 @@ const SubTaskList = ({
         }
     };
 
+    const handleQuickStatusUpdate = async (subTask, newStatus) => {
+        if (onUpdateSubTask && (isManager || userRole === 'admin')) {
+            try {
+                // Only send the status to update, backend handles the rest
+                const payload = {
+                    status: newStatus
+                };
+
+                await onUpdateSubTask(taskId, subTask._id, payload);
+                window.location.reload(); // Reload to reflect changes
+            } catch (error) {
+                console.error('Failed to update subtask status:', error);
+                toast.error('Failed to update status');
+            }
+        }
+    };
+
     const handleAddNewSubTask = async (subTaskData) => {
         if (onAddSubTask && !isManager) {
             try {
@@ -288,6 +305,22 @@ const SubTaskList = ({
                                                         </div>
                                                     </div>
 
+                                                    <div className="ml-4">
+                                                        <select
+                                                            value={subTask.status}
+                                                            onChange={(e) => handleQuickStatusUpdate(subTask, e.target.value)}
+                                                            disabled={!isManager && userRole !== 'admin'}
+                                                            className={`block w-32 pl-3 pr-8 py-1 text-xs border border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm
+                                                                ${(!isManager && userRole !== 'admin') ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-white text-gray-900'}
+                                                            `}
+                                                            onClick={(e) => e.stopPropagation()}
+                                                        >
+                                                            <option value="pending">Pending</option>
+                                                            <option value="in-progress">In Progress</option>
+                                                            <option value="completed">Completed</option>
+                                                            <option value="delayed">Delayed</option>
+                                                        </select>
+                                                    </div>
                                                     {/* Action Buttons */}
                                                     {canPerformActions && (
                                                         <div className="flex items-center space-x-2 ml-4">

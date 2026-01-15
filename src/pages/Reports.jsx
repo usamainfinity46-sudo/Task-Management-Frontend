@@ -371,6 +371,151 @@ const Reports = () => {
               </div>
             )}
 
+            {/* Monthly Calendar Chart */}
+            {detailed.length > 0 && (
+              <div className="bg-white rounded-lg shadow overflow-hidden mb-6">
+                <div className="px-6 py-4 border-b">
+                  <h3 className="text-lg font-semibold">Monthly Work Calendar</h3>
+                  <p className="text-sm text-gray-600">
+                    Daily status overview for {months.find(m => m.value === parseInt(filters.month))?.label} {filters.year}
+                  </p>
+                </div>
+                <div className="p-6">
+                  {/* Legend */}
+                  <div className="flex flex-wrap gap-4 mb-6 pb-4 border-b">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded bg-green-500"></div>
+                      <span className="text-sm text-gray-600">Completed</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded bg-blue-500"></div>
+                      <span className="text-sm text-gray-600">In Progress</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded bg-yellow-500"></div>
+                      <span className="text-sm text-gray-600">Pending</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 rounded bg-gray-200 border border-gray-300"></div>
+                      <span className="text-sm text-gray-600">Not in Range</span>
+                    </div>
+                  </div>
+
+                  {/* Calendar Grid */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full border-collapse">
+                      <thead>
+                        <tr>
+                          <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b sticky left-0 bg-white z-10">
+                            Task
+                          </th>
+                          <th className="px-4 py-2 text-left text-sm font-medium text-gray-700 border-b">
+                            User
+                          </th>
+                          {Array.from({ length: 31 }, (_, i) => {
+                            const day = i + 1;
+                            const daysInMonth = new Date(parseInt(filters.year), parseInt(filters.month), 0).getDate();
+                            const isValidDay = day <= daysInMonth;
+                            return (
+                              <th
+                                key={day}
+                                className={`px-1 py-2 text-center text-xs font-medium text-gray-600 border-b min-w-[32px] ${
+                                  !isValidDay ? 'bg-gray-100' : ''
+                                }`}
+                              >
+                                {isValidDay ? day : ''}
+                              </th>
+                            );
+                          })}
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {detailed.map((task) => {
+                          const daysInMonth = new Date(parseInt(filters.year), parseInt(filters.month), 0).getDate();
+                          const taskStart = new Date(task.startDate);
+                          const taskEnd = new Date(task.endDate);
+                          taskStart.setHours(0, 0, 0, 0);
+                          taskEnd.setHours(23, 59, 59, 999);
+
+                          // Create a map of days for quick lookup
+                          const daysMap = new Map();
+                          (task.days || []).forEach(day => {
+                            const dayDate = new Date(day.date);
+                            dayDate.setHours(0, 0, 0, 0);
+                            const dayNum = dayDate.getDate();
+                            daysMap.set(dayNum, day);
+                          });
+
+                          return (
+                            <tr key={task.taskId} className="hover:bg-gray-50">
+                              <td className="px-4 py-3 border-b sticky left-0 bg-white z-10">
+                                <div className="font-medium text-sm text-gray-900">{task.title}</div>
+                                <div className="text-xs text-gray-500 mt-1">
+                                  {format(new Date(task.startDate), 'MMM dd')} - {format(new Date(task.endDate), 'MMM dd')}
+                                </div>
+                              </td>
+                              <td className="px-4 py-3 border-b">
+                                <div className="text-sm text-gray-700">
+                                  {typeof task.assignedTo === 'object' && task.assignedTo !== null
+                                    ? task.assignedTo.name
+                                    : task.assignedTo || 'N/A'}
+                                </div>
+                              </td>
+                              {Array.from({ length: 31 }, (_, i) => {
+                                const day = i + 1;
+                                const isValidDay = day <= daysInMonth;
+                                const currentDay = new Date(parseInt(filters.year), parseInt(filters.month) - 1, day);
+                                currentDay.setHours(0, 0, 0, 0);
+                                
+                                const isInTaskRange = currentDay >= taskStart && currentDay <= taskEnd;
+                                const dayData = daysMap.get(day);
+                                
+                                let status = 'not-in-range';
+                                if (isInTaskRange) {
+                                  status = dayData ? dayData.status : 'pending';
+                                }
+
+                                const getStatusColor = (status) => {
+                                  switch (status) {
+                                    case 'completed':
+                                      return 'bg-green-500';
+                                    case 'in-progress':
+                                      return 'bg-blue-500';
+                                    case 'pending':
+                                      return 'bg-yellow-500';
+                                    default:
+                                      return 'bg-gray-200 border border-gray-300';
+                                  }
+                                };
+
+                                return (
+                                  <td
+                                    key={day}
+                                    className={`px-1 py-2 border-b text-center ${!isValidDay ? 'bg-gray-100' : ''}`}
+                                    title={
+                                      isValidDay && isInTaskRange
+                                        ? `Day ${day}: ${status}${dayData ? ` (${dayData.totalSubtasks || 0} subtasks, ${dayData.totalHours || 0}h)` : ' (No work done)'}`
+                                        : ''
+                                    }
+                                  >
+                                    {isValidDay && (
+                                      <div
+                                        className={`w-6 h-6 mx-auto rounded ${getStatusColor(status)}`}
+                                      ></div>
+                                    )}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              </div>
+            )}
+
             {/* Detailed Report Table - Tree Structure */}
             {detailed.length > 0 && (
               <div className="bg-white rounded-lg shadow overflow-hidden">
