@@ -1,19 +1,19 @@
 import React from 'react';
-import { 
-  BarChart, 
-  Bar, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  Legend,
+  ResponsiveContainer
 } from 'recharts';
 import Skeleton from 'react-loading-skeleton';
 
 const TaskChart = ({ data, isLoading }) => {
   console.log("Data ", data);
-  
+
   const CustomTooltip = ({ active, payload, label }) => {
     if (active && payload && payload.length) {
       return (
@@ -41,7 +41,7 @@ const TaskChart = ({ data, isLoading }) => {
   }
 
   // If no data or empty array, show placeholder
-  if (!data || data.length === 0 || data.every(item => 
+  if (!data || data.length === 0 || data.every(item =>
     (item.completed === 0 && item.pending === 0 && item.inProgress === 0 && item.delayed === 0)
   )) {
     return (
@@ -62,51 +62,51 @@ const TaskChart = ({ data, isLoading }) => {
   }
 
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex items-center justify-between mb-6">
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 overflow-hidden">
+      <div className="flex items-center justify-between mb-8">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">Task Overview</h3>
-          <p className="text-sm text-gray-600">Weekly performance metrics</p>
+          <h3 className="text-xl font-bold text-gray-900">Task Overview</h3>
+          <p className="text-sm text-gray-500 mt-1">Weekly performance metrics</p>
         </div>
-       
+
       </div>
-      
+
       <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
           <BarChart data={data}>
             <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
-            <XAxis 
-              dataKey="name" 
+            <XAxis
+              dataKey="name"
               stroke="#6b7280"
               fontSize={12}
             />
-            <YAxis 
+            <YAxis
               stroke="#6b7280"
               fontSize={12}
             />
             <Tooltip content={<CustomTooltip />} />
             <Legend />
-            <Bar 
-              dataKey="completed" 
-              name="Completed" 
+            <Bar
+              dataKey="completed"
+              name="Completed"
               fill="#4CAF50"
               radius={[4, 4, 0, 0]}
             />
-            <Bar 
-              dataKey="pending" 
-              name="Pending" 
+            <Bar
+              dataKey="pending"
+              name="Pending"
               fill="#FF9800"
               radius={[4, 4, 0, 0]}
             />
-            <Bar 
-              dataKey="inProgress" 
-              name="In Progress" 
+            <Bar
+              dataKey="inProgress"
+              name="In Progress"
               fill="#2196F3"
               radius={[4, 4, 0, 0]}
             />
-            <Bar 
-              dataKey="delayed" 
-              name="Delayed" 
+            <Bar
+              dataKey="delayed"
+              name="Delayed"
               fill="#F44336"
               radius={[4, 4, 0, 0]}
             />

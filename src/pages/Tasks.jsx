@@ -169,12 +169,12 @@ const Tasks = () => {
   const canCreateTask = user?.role !== 'staff';
 
   return (
-    <div className="space-y-6">
+    <div className="min-h-screen space-y-8 bg-gray-50 py-8 px-4 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Tasks</h1>
-          <p className="text-gray-600 mt-1">
+          <h1 className="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-gray-900 to-gray-600">Tasks</h1>
+          <p className="text-gray-600 mt-2 text-lg">
             Manage and track all tasks in your organization
           </p>
         </div>
@@ -182,9 +182,9 @@ const Tasks = () => {
         <div className="flex space-x-3">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
+            className="inline-flex items-center px-4 py-2.5 border border-gray-200 rounded-xl shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 hover:border-blue-300 transition-all duration-200"
           >
-            <FunnelIcon className="h-5 w-5 mr-2" />
+            <FunnelIcon className="h-5 w-5 mr-2 text-gray-500" />
             Filters
           </button>
 
@@ -194,7 +194,7 @@ const Tasks = () => {
                 setInitialTaskData(null);
                 setShowCreateModal(true);
               }}
-              className="inline-flex items-center px-4 py-2 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+              className="inline-flex items-center px-5 py-2.5 border border-transparent rounded-xl shadow-lg text-sm font-medium text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 hover:shadow-xl transition-all duration-200"
             >
               <PlusIcon className="h-5 w-5 mr-2" />
               New Task
@@ -205,7 +205,7 @@ const Tasks = () => {
 
       {/* Filters */}
       {showFilters && (
-        <div className="bg-white p-4 rounded-lg shadow">
+        <div className="bg-white p-6 rounded-2xl shadow-lg border border-gray-200 animate-fade-in-down">
           <TaskFilters
             filters={filters}
             onChange={handleFilterChange}
@@ -243,19 +243,19 @@ const Tasks = () => {
 
           {/* Pagination */}
           {totalPages > 1 && (
-            <div className="flex items-center justify-between bg-white px-4 py-3 sm:px-6 rounded-lg shadow">
+            <div className="flex items-center justify-between bg-white px-6 py-4 rounded-2xl shadow-lg border border-gray-200">
               <div className="flex-1 flex justify-between sm:hidden">
                 <button
                   onClick={() => handlePageChange(currentPage - 1)}
                   disabled={currentPage === 1}
-                  className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  className="relative inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
                 >
                   Previous
                 </button>
                 <button
                   onClick={() => handlePageChange(currentPage + 1)}
                   disabled={currentPage === totalPages}
-                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                  className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-200 text-sm font-medium rounded-xl text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
                 >
                   Next
                 </button>
@@ -263,22 +263,22 @@ const Tasks = () => {
               <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
                 <div>
                   <p className="text-sm text-gray-700">
-                    Showing <span className="font-medium">{(currentPage - 1) * filters.limit + 1}</span> to{' '}
-                    <span className="font-medium">
+                    Showing <span className="font-semibold text-gray-900">{(currentPage - 1) * filters.limit + 1}</span> to{' '}
+                    <span className="font-semibold text-gray-900">
                       {Math.min(currentPage * filters.limit, tasks.length)}
                     </span>{' '}
-                    of <span className="font-medium">{tasks.length}</span> results
+                    of <span className="font-semibold text-gray-900">{tasks.length}</span> results
                   </p>
                 </div>
                 <div>
-                  <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px">
+                  <nav className="relative z-0 inline-flex rounded-xl shadow-sm -space-x-px" aria-label="Pagination">
                     {[...Array(totalPages)].map((_, i) => (
                       <button
                         key={i + 1}
                         onClick={() => handlePageChange(i + 1)}
-                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium ${currentPage === i + 1
-                          ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
-                          : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
+                        className={`relative inline-flex items-center px-4 py-2 border text-sm font-medium first:rounded-l-xl last:rounded-r-xl ${currentPage === i + 1
+                            ? 'z-10 bg-blue-50 border-blue-500 text-blue-600'
+                            : 'bg-white border-gray-300 text-gray-500 hover:bg-gray-50'
                           }`}
                       >
                         {i + 1}

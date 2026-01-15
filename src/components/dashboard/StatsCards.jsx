@@ -15,25 +15,37 @@ import { ExclamationTriangleIcon } from '@heroicons/react/24/outline';
 const StatCard = ({ title, value, icon: Icon, color }) => {
   const colors = {
     blue: 'bg-blue-500',
-    green: 'bg-green-500',
-    yellow: 'bg-yellow-500',
+    green: 'bg-emerald-500',
+    yellow: 'bg-amber-500',
     orange: 'bg-orange-500',
     purple: 'bg-purple-500',
     indigo: 'bg-indigo-500',
     red: "bg-red-500"
   };
 
+  const ringColors = {
+    blue: 'ring-blue-100',
+    green: 'ring-emerald-100',
+    yellow: 'ring-amber-100',
+    orange: 'ring-orange-100',
+    purple: 'ring-purple-100',
+    indigo: 'ring-indigo-100',
+    red: "ring-red-100"
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow p-6">
-      <div className="flex justify-between items-center">
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6 overflow-hidden relative hover:shadow-xl transition-all duration-300">
+      <div className="flex justify-between items-start relative z-10">
         <div>
-          <p className="text-sm text-gray-600">{title}</p>
-          <p className="text-2xl font-bold">{value}</p>
+          <p className="text-sm font-medium text-gray-500 uppercase tracking-wide">{title}</p>
+          <p className="text-3xl font-bold text-gray-900 mt-2">{value}</p>
         </div>
-        <div className={`p-3 rounded-full ${colors[color]}`}>
+        <div className={`p-3 rounded-xl ${colors[color]} shadow-lg ring-4 ${ringColors[color]} bg-opacity-90`}>
           <Icon className="h-6 w-6 text-white" />
         </div>
       </div>
+      {/* Decorative background element */}
+      <div className={`absolute -bottom-4 -right-4 w-24 h-24 rounded-full opacity-5 ${colors[color]}`}></div>
     </div>
   );
 };

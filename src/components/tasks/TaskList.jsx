@@ -2,7 +2,7 @@
 // components/tasks/TaskList.jsx
 import React from 'react';
 import { format } from 'date-fns';
-import { 
+import {
   CheckCircleIcon,
   ClockIcon,
   ExclamationTriangleIcon,
@@ -13,16 +13,16 @@ import {
 import SubTaskList from './SubTaskList';
 import { TASK_STATUS } from '../../utils/constants';
 
-const TaskList = ({ 
-  tasks, 
-  onUpdateStatus, 
+const TaskList = ({
+  tasks,
+  onUpdateStatus,
   onUpdateSubTask,
   onDeleteSubTask,
   onAddSubTask,
-  onEdit, 
-  onDelete, 
-  userRole, 
-  currentUserId 
+  onEdit,
+  onDelete,
+  userRole,
+  currentUserId
 }) => {
   const getStatusIcon = (status) => {
     switch (status) {
@@ -80,16 +80,16 @@ const TaskList = ({
     <div className="space-y-4">
       {tasks.map((task) => {
         // Calculate subtask statistics from days array
-        const totalSubtasks = task.days?.reduce((sum, day) => 
+        const totalSubtasks = task.days?.reduce((sum, day) =>
           sum + (day.subTasks?.length || 0), 0
         ) || 0;
-        
-        const completedSubtasks = task.days?.reduce((sum, day) => 
+
+        const completedSubtasks = task.days?.reduce((sum, day) =>
           sum + (day.subTasks?.filter(st => st.status === 'completed').length || 0), 0
         ) || 0;
-        
+
         return (
-          <div key={task._id} className="bg-white rounded-lg shadow hover:shadow-md transition-shadow">
+          <div key={task._id} className="bg-white rounded-2xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 overflow-hidden">
             <div className="p-4">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
@@ -119,7 +119,7 @@ const TaskList = ({
                   <div className="flex space-x-2">
                     {/* Edit Button */}
                     {canEditTask(task) && onEdit && (
-                      <button 
+                      <button
                         onClick={() => onEdit(task)}
                         className="p-1 text-gray-400 hover:text-blue-600 transition-colors"
                         title="Edit Task"
@@ -127,10 +127,10 @@ const TaskList = ({
                         <PencilIcon className="h-5 w-5" />
                       </button>
                     )}
-                    
+
                     {/* Delete Button */}
                     {canDeleteTask(task) && onDelete && (
-                      <button 
+                      <button
                         onClick={() => onDelete(task._id)}
                         className="p-1 text-gray-400 hover:text-red-600 transition-colors"
                         title="Delete Task"

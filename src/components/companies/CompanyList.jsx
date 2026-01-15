@@ -1,6 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { 
+import {
   BuildingOfficeIcon,
   PencilIcon,
   TrashIcon,
@@ -11,7 +11,7 @@ import {
 
 const CompanyList = ({ companies, onEdit, onDelete }) => {
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-lg">
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
       <table className="min-w-full divide-y divide-gray-200">
         <thead className="bg-gray-50">
           <tr>
@@ -56,11 +56,11 @@ const CompanyList = ({ companies, onEdit, onDelete }) => {
                 <div className="text-sm text-gray-500">{company.phone}</div>
                 <div className="text-sm text-gray-500">{company.address}</div>
               </td>
-               <td className="px-6 py-4">
+              <td className="px-6 py-4">
                 <div className="flex items-center">
-                 <div className="text-sm text-gray-500">{company.totalUser}</div>
-                 
-                 
+                  <div className="text-sm text-gray-500">{company.totalUser}</div>
+
+
                 </div>
               </td>
               <td className="px-6 py-4">
@@ -103,7 +103,7 @@ const CompanyList = ({ companies, onEdit, onDelete }) => {
           ))}
         </tbody>
       </table>
-      
+
       {companies.length === 0 && (
         <div className="text-center py-12">
           <BuildingOfficeIcon className="h-12 w-12 text-gray-400 mx-auto" />

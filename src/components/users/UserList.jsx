@@ -1,6 +1,6 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { 
+import {
   UserCircleIcon,
   ShieldCheckIcon,
   UserIcon,
@@ -16,13 +16,13 @@ const UserList = ({ users, currentUser, onEdit, onDelete, companies }) => {
       manager: 'bg-blue-100 text-blue-800',
       staff: 'bg-green-100 text-green-800'
     };
-    
+
     const icons = {
       admin: <ShieldCheckIcon className="h-4 w-4" />,
       manager: <Cog6ToothIcon className="h-4 w-4" />,
       staff: <UserIcon className="h-4 w-4" />
     };
-    
+
     return (
       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${colors[role]}`}>
         {icons[role]}
@@ -34,9 +34,9 @@ const UserList = ({ users, currentUser, onEdit, onDelete, companies }) => {
 
 
   // console.log("Users .... ", users);
-  
+
   return (
-    <div className="bg-white shadow overflow-hidden sm:rounded-md">
+    <div className="bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden">
       <ul className="divide-y divide-gray-200">
         {users.map((user) => (
           <li key={user._id} className="px-6 py-4 hover:bg-gray-50">
@@ -53,7 +53,7 @@ const UserList = ({ users, currentUser, onEdit, onDelete, companies }) => {
                     <UserCircleIcon className="h-10 w-10 text-gray-400" />
                   )}
                 </div>
-                
+
                 <div>
                   <div className="flex items-center space-x-2">
                     <h3 className="text-sm font-medium text-gray-900">{user.name}</h3>
@@ -69,16 +69,15 @@ const UserList = ({ users, currentUser, onEdit, onDelete, companies }) => {
                   </div>
                 </div>
               </div>
-              
+
               <div className="flex items-center space-x-2">
-                <span className={`text-xs px-2 py-1 rounded ${
-                  user.isActive 
-                    ? 'bg-green-100 text-green-800' 
+                <span className={`text-xs px-2 py-1 rounded ${user.isActive
+                    ? 'bg-green-100 text-green-800'
                     : 'bg-red-100 text-red-800'
-                }`}>
+                  }`}>
                   {user.isActive ? 'Active' : 'Inactive'}
                 </span>
-                
+
                 {currentUser.role === 'admin' && (
                   <>
                     <button
@@ -103,7 +102,7 @@ const UserList = ({ users, currentUser, onEdit, onDelete, companies }) => {
           </li>
         ))}
       </ul>
-      
+
       {users.length === 0 && (
         <div className="text-center py-12">
           <UserCircleIcon className="h-12 w-12 text-gray-400 mx-auto" />
