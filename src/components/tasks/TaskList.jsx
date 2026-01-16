@@ -88,16 +88,29 @@ const TaskList = ({
           sum + (day.subTasks?.filter(st => st.status === 'completed').length || 0), 0
         ) || 0;
 
+        // Check if all assigned days are completed
+        const hasDays = task.days && task.days.length > 0;
+        const areAllDaysCompleted = hasDays && task.days.every(day =>
+          day.subTasks && day.subTasks.length > 0 && day.subTasks.every(st => st.status === 'completed')
+        );
+
+        // Derive display status
+        // If status is 'completed' but days are not fully completed, show 'in-progress'
+        let displayStatus = task.status;
+        if (task.status === 'completed' && hasDays && !areAllDaysCompleted) {
+          displayStatus = 'in-progress';
+        }
+
         return (
           <div key={task._id} className="bg-white rounded-2xl shadow-lg border border-gray-200 hover:shadow-xl transition-all duration-300 overflow-hidden">
             <div className="p-4">
               <div className="flex items-start justify-between">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
-                    {getStatusIcon(task.status)}
+                    {getStatusIcon(displayStatus)}
                     <h3 className="font-semibold text-gray-900">{task.title}</h3>
                     {getPriorityBadge(task.priority)}
-                    {getStatusBadge(task.status)}
+                    {getStatusBadge(displayStatus)}
                   </div>
                   <p className="text-gray-600 text-sm mb-3">{task.description}</p>
                   <div className="flex items-center space-x-4 text-sm text-gray-500">

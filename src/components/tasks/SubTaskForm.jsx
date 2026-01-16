@@ -8,7 +8,7 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
   const [formData, setFormData] = useState({
     date: '',
     description: '',
-    hoursSpent: 0,
+    hoursSpent: 5, // Changed from 0 to 5
     remarks: '',
     status: TASK_STATUS.IN_PROGRESS,
     ...initialData
@@ -22,7 +22,7 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
   // Helper function to get date-only string (YYYY-MM-DD)
   const getDateOnly = (dateInput) => {
     if (!dateInput) return '';
-    
+
     let date;
     if (typeof dateInput === 'string') {
       date = new Date(dateInput);
@@ -31,17 +31,17 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
     } else {
       return '';
     }
-    
+
     // Handle invalid dates
     if (isNaN(date.getTime())) {
       return '';
     }
-    
+
     // Get date in YYYY-MM-DD format
     const year = date.getFullYear();
     const month = String(date.getMonth() + 1).padStart(2, '0');
     const day = String(date.getDate()).padStart(2, '0');
-    
+
     return `${year}-${month}-${day}`;
   };
 
@@ -51,15 +51,15 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
     if (initialData && initialData.date) {
       return;
     }
-    
+
     // Only set default date if no date is set
     if (!formData.date) {
       const today = new Date();
       const todayStr = getDateOnly(today);
-      
-      setFormData(prev => ({ 
-        ...prev, 
-        date: todayStr 
+
+      setFormData(prev => ({
+        ...prev,
+        date: todayStr
       }));
     }
   }, [initialData, formData.date]);
@@ -98,9 +98,9 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
       newErrors.description = 'Description is required';
     }
 
-    // Validate hours spent
-    if (formData.hoursSpent < 0 || formData.hoursSpent > 24) {
-      newErrors.hoursSpent = 'Hours must be between 0 and 24';
+    // Validate hours spent - changed from 24 to 9
+    if (formData.hoursSpent < 0 || formData.hoursSpent > 9) {
+      newErrors.hoursSpent = 'Hours must be between 0 and 9';
     }
 
     setErrors(newErrors);
@@ -115,9 +115,8 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
         ...formData,
         date: formData.date,
         description: formData.description.trim(),
-        hoursSpent: Number(formData.hoursSpent) || 0
+        hoursSpent: Number(formData.hoursSpent) || 5
       };
-
       onSubmit(submissionData);
     }
   };
@@ -126,7 +125,7 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'hoursSpent' ? parseFloat(value) || 0 : value
+      [name]: name === 'hoursSpent' ? parseFloat(value) || 5 : value
     }));
 
     // Clear error for this field
@@ -151,9 +150,8 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
               name="date"
               value={formData.date}
               onChange={handleChange}
-              className={`w-full pl-10 px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-                errors.date ? 'border-red-500' : 'border-gray-300'
-              }`}
+              className={`w-full pl-10 px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 ${errors.date ? 'border-red-500' : 'border-gray-300'
+                }`}
               required
             />
           </div>
@@ -172,12 +170,11 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
             value={formData.hoursSpent}
             onChange={handleChange}
             min="0"
-            max="24"
+            max="9" // Changed from 24 to 9
             step="0.5"
-            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-              errors.hoursSpent ? 'border-red-500' : 'border-gray-300'
-            }`}
-            placeholder="0"
+            className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 ${errors.hoursSpent ? 'border-red-500' : 'border-gray-300'
+              }`}
+            placeholder="5" // Changed from 0 to 5
           />
           {errors.hoursSpent && (
             <p className="mt-1 text-sm text-red-600">{errors.hoursSpent}</p>
@@ -194,9 +191,8 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
           value={formData.description}
           onChange={handleChange}
           rows="3"
-          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 ${
-            errors.description ? 'border-red-500' : 'border-gray-300'
-          }`}
+          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-1 focus:ring-blue-500 ${errors.description ? 'border-red-500' : 'border-gray-300'
+            }`}
           placeholder="What needs to be done on this day?"
           required
         />
@@ -218,7 +214,7 @@ const SubTaskForm = ({ onSubmit, onCancel, task, initialData }) => {
           placeholder="Any additional notes or comments..."
         />
       </div>
-      
+
       {canPerformActions && (
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
