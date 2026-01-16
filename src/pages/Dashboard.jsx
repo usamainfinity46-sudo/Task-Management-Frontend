@@ -125,7 +125,7 @@ const Dashboard = () => {
       <StatsCards
         stats={displayData}
         userRole={user?.role}
-        subtasks={stats?.subtasks} // Pass subtasks from generic stats if missing in displayData
+        subtasks={stats?.subtasks} 
       />
 
       {/* Charts and Recent Activity */}

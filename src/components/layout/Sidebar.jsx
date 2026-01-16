@@ -57,7 +57,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
             </div>
             <div className="flex-1 h-0 pt-5 pb-4 overflow-y-auto">
               <div className="flex-shrink-0 flex items-center px-4">
-                <h1 className="text-xl font-bold text-gray-800">TaskFlow Pro</h1>
+                <Link className="text-xl font-bold cursor-pointer text-gray-800" to="/dashboard">
+                  TaskFlow Pro
+                </Link>
               </div>
               <nav className="mt-5 px-2 space-y-1">
                 {filteredNavigation.map((item) => (
@@ -105,7 +107,9 @@ const Sidebar = ({ sidebarOpen, setSidebarOpen }) => {
       {/* Desktop sidebar */}
       <div className="hidden lg:fixed lg:inset-y-0 lg:flex lg:w-64 lg:flex-col lg:border-r lg:border-gray-200 lg:bg-white lg:pt-5 lg:pb-4">
         <div className="flex flex-shrink-0 items-center px-6">
-          <h1 className="text-xl font-bold text-gray-800">TaskFlow Pro</h1>
+          <Link className="text-xl font-bold cursor-pointer text-gray-800" to="/dashboard">
+            TaskFlow Pro
+          </Link>
         </div>
         <div className="mt-6 flex flex-1 flex-col overflow-y-auto">
           <nav className="flex-1 space-y-1 px-4 pb-4">
