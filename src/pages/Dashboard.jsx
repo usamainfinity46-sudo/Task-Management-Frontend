@@ -125,7 +125,7 @@ const Dashboard = () => {
       <StatsCards
         stats={displayData}
         userRole={user?.role}
-        subtasks={stats?.subtasks} 
+        subtasks={stats?.subtasks}
       />
 
       {/* Charts and Recent Activity */}
@@ -214,7 +214,7 @@ const Dashboard = () => {
                     {task.title}
                   </h4>
                   <div className="flex items-center gap-3 mt-1.5">
-                    <span className={`px-2 py-0.5 text-xs font-medium rounded-md ${task.status === 'completed' ? 'bg-green-100 text-green-700' :
+                    <span className={`px-2 py-0.5 text-xs font-medium rounded-md ${task.status === 'completed' ? 'bg-green-100 text-green-700':
                       task.status === 'in-progress' ? 'bg-blue-100 text-blue-700' :
                         task.status === 'pending' ? 'bg-amber-100 text-amber-700' :
                           'bg-red-100 text-red-700'
